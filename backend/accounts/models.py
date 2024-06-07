@@ -29,14 +29,20 @@ class WebPage(models.Model):
         max_length=1024
     )
     content = models.TextField(
-        'Содержание страницы'
+        'Содержание страницы',
+        blank=True
     )
     update_date = models.DateTimeField(
-        'Дата обновления'
+        'Дата обновления',
+        null=True
     )
     accounts = models.ManyToManyField(
         'Account',
         related_name='pages'
+    )
+    user_add = models.BooleanField(
+        'Добавлено пользователем',
+        default=False
     )
 
     class Meta:

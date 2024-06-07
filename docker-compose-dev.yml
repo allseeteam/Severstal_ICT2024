@@ -1,0 +1,27 @@
+services:
+  analyst-db:
+    container_name: analyst-db
+    image: postgres:15-alpine
+    restart: always
+    ports:
+      - "5439:5432"
+    # volumes:
+    #   - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - .env
+
+  analyst-rabbitmq:
+    container_name: analyst-rabbitmq
+    hostname: 'rabbitmq'
+    image: rabbitmq:3.13.2
+    restart: on-failure
+    ports:
+      - "5672:5672"
+    env_file:
+      - .env
+    # volumes:
+    #   - rabbitmq_data:/var/lib/rabbitmq
+
+# volumes:
+#   postgres_data:
+#   rabbitmq_data:

@@ -3,6 +3,10 @@ from django.contrib import admin
 from . import models
 
 
+@admin.register(models.Data)
+class DataAdmin(admin.ModelAdmin):
+    pass
+
 @admin.register(models.Account)
 class AccountAdmin(admin.ModelAdmin):
     pass
@@ -10,11 +14,6 @@ class AccountAdmin(admin.ModelAdmin):
 
 @admin.register(models.WebPage)
 class WebPageAdmin(admin.ModelAdmin):
-    pass
-
-
-@admin.register(models.WebVideo)
-class WebVideoAdmin(admin.ModelAdmin):
     pass
 
 

@@ -63,6 +63,7 @@ class DataParser:
                 data_type=models.Data.DATA_TYPES,
                 url=entity['url'],
                 data=entity['frame'],
+                meta_data=entity['meta'],
                 date=datetime.today(),
                 version=0,
                 # еще можно доставать entity['id'] - это уникальный ключ entity
@@ -177,13 +178,13 @@ class SiteParser:
                 # исключаем страницы без ссылок, потому что
                 # большая вероятность, что сработала защита от парсинга
                 # или ddos.
-                urls = self.extract_urls_from_page(url, content.page_content)
+                urls = self.extract_urls_from_url_and_content(url, content.page_content)
                 if len(urls) == 0:
                     continue
 
                 print(f'Скачана ссылка: {url}')
 
-                DataParser.page_content_to_data(content=content.page_content)
+                DataParser.page_content_to_data(content=content.page_content, url=url)
 
                 existing_urls = models.WebPage.objects.filter(
                     url__in=urls
@@ -227,6 +228,9 @@ class SiteParser:
                     if url not in existing_urls
                 ]
 
+    def extract_urls_from_url_and_content(self, url, content):
+        page = models.WebPage(url=url, content=content)
+        return self.extract_urls_from_page(page)
 
     def extract_urls_from_page(self, page: models.WebPage):
         site = self.get_url_site(page.url)

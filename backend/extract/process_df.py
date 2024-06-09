@@ -19,7 +19,8 @@ def get_entities_from_html(content, url):
     dataframes = get_tables_from_raw_html(content, only_df=False)
     for frame in dataframes:
         entities.append(
-            {'url': url, 'frame': frame['data'], 'meta': frame['meta']}
+            {'url': url, 'frame': frame['data'],
+                'meta': {'title': frame['meta']}}
         )
     return entities
 

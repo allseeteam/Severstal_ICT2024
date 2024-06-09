@@ -82,7 +82,7 @@ class Data(models.Model):
     type = models.CharField(
         'Тип источника данных',
         choices=SOURCE_TYPES,
-        max_length=16
+        # max_length=16
     )
     url = models.CharField(
         'URL',
@@ -99,7 +99,7 @@ class Data(models.Model):
     data_type = models.CharField(
         'Тип данных',
         choices=DATA_TYPES,
-        max_length=16
+        # max_length=16
     )
     meta_data = models.JSONField(
         verbose_name='Мета данные'

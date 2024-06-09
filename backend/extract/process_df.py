@@ -6,14 +6,22 @@ from extract.utils import calc_type_distribution
 
 
 def get_entities_from_html_df(df):
-    res = []
-    for i, row in tqdm(df.iterrows()):
-        # print(row)
-        dataframes = get_tables_from_raw_html(row.content, only_df=False)
-        for frame in dataframes:
-            res.append(
-                {'url': row.url, 'frame': frame['data'], 'meta': frame['meta']})
-    return res
+    all_entities = []
+    for _, row in tqdm(df.iterrows()):
+        entities = get_entities_from_html(row.content, row.url)
+        for entity in entities:
+            all_entities.append(entity)
+    return all_entities
+
+
+def get_entities_from_html(content, url):
+    entities = []
+    dataframes = get_tables_from_raw_html(content, only_df=False)
+    for frame in dataframes:
+        entities.append(
+            {'url': url, 'frame': frame['data'], 'meta': frame['meta']}
+        )
+    return entities
 
 
 def filter_entities(entities, float_threshold=0.5, datetime_threshold=0.5):

@@ -71,3 +71,5 @@ camelot-py[base]
 pypdf
 opencv-python
 pdfplumber
+ruwordnet
+pymorphy3

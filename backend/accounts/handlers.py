@@ -2,6 +2,7 @@ from queue import Queue
 import time
 from typing import Dict, List
 from urllib.parse import urlparse
+from datetime import datetime
 
 from bs4 import BeautifulSoup
 from django.utils import timezone
@@ -9,6 +10,8 @@ from langchain_community.document_loaders import AsyncChromiumLoader
 import requests
 
 from analyst.settings import BASE_DIR
+
+from extract import prepary_entities
 
 from . import models
 
@@ -51,13 +54,25 @@ class FedStatParser:
 
 class DataParser:
     @classmethod
-    def page_content_to_data(cls, content: str) -> models.Data:
-        return
-        return models.Data.objects.create(
-            type=models.Data.WEB_PAGE,
-
-
-        )
+    def page_content_to_data(cls, content: str, url: str) -> models.Data:
+        entities = prepary_entities(content, url)
+        data = []
+        for entity in entities:
+            data_row = models.Data.objects.create(
+                type=models.Data.WEB_PAGE,
+                data_type=models.Data.DATA_TYPES,
+                url=entity['url'],
+                data=entity['frame'],
+                date=datetime.today(),
+                version=0,
+                # еще можно доставать entity['id'] - это уникальный ключ entity
+                # (строка вида url@dataframe_hash)
+            )
+            print('CREATED ROW')
+            print(data_row)
+            data.append(data_row)
+        models.Data
+        return data
 
     @classmethod
     def pdf_to_data(cls, content: str) -> models.Data:
@@ -195,10 +210,27 @@ class SiteParser:
                 objs=web_pages, batch_size=700, ignore_conflicts=True
             )
 
+            # Тут надо запускать преобразование в Data
+            for page in web_pages:
+                print(f'Скачана ссылка: {page.url}')
+                # print(f'CONTENT={page.content}')
+                DataParser.page_content_to_data(content=page.content, url=page.url)
 
-    def extract_urls_from_page(self, url: str, content: str):
-        site = self.get_url_site(url)
-        soup = BeautifulSoup(content)
+                urls = self.extract_urls_from_page(page)
+                existing_urls = models.WebPage.objects.filter(
+                    url__in=urls
+                ).values_list('url', flat=True)
+    
+                [
+                    self.add_url_to_queue(url)
+                    for url in urls
+                    if url not in existing_urls
+                ]
+
+
+    def extract_urls_from_page(self, page: models.WebPage):
+        site = self.get_url_site(page.url)
+        soup = BeautifulSoup(page.content)
         urls = set()
         for a in soup.find_all('a'):
             href = a.attrs.get('href')

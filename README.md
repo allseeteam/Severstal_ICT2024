@@ -78,7 +78,13 @@ python manage.py model2csv accounts.WebPage > pages.csv
 python manage.py model2csv accounts.WebPage > data.csv
 ```
 
-3. Запускаем индексацию контента через `generate_search.py`
+3. Скачиваем RuWordNet для синонимов
+
+```
+ruwordnet download
+```
+
+4. Запускаем индексацию контента через `generate_search.py`
 
 ```
 python generate_search.py --path data.csv

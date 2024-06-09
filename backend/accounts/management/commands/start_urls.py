@@ -7,5 +7,7 @@ START_URLS = [
     # 'https://cbr.ru/dkp/statistics/'
     # 'https://ru.wikipedia.org/wiki/Список_государств_и_зависимых_территорий_по_населению',
     # 'https://www.fedstat.ru/'
-    'https://www.fedstat.ru/opendata'
+    # 'https://www.fedstat.ru/opendata'
+    # 'https://cbr.ru/banking_sector/credit/coinfo/?id=512007244'
+    'https://developer.mozilla.org/en-US/docs/Web/HTML/Element/table'
 ]

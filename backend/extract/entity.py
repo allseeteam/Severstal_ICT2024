@@ -1,13 +1,33 @@
-from extract.html import get_tables_from_raw_html
 from extract.process_df import (
     get_entities_from_html_df,
+    get_entities_from_html,
     deduplicate_entities,
     calculate_ratios,
     find_header,
-    filter_entities
+    filter_entities,
 )
 import json
 import pandas as pd
+
+
+def prepary_entities(raw_html, url):
+    """
+    не-векторизованная версия prepare_raw_data
+
+    также хранит данные (поле frame) как строку (для записи в json поле)
+    """
+    print(raw_html)
+    print()
+    print()
+    print()
+    entities = get_entities_from_html(raw_html, url)
+    entities = deduplicate_entities(entities)
+    entities = calculate_ratios(entities)
+    # entities = filter_entities(entities)
+    # entities = apply_to_data(entities, find_header)
+    entities = apply_to_data(entities, dictify_df)
+    print(entities)
+    return entities
 
 
 def prepare_raw_data(df):
@@ -26,15 +46,18 @@ def prepare_raw_data(df):
     return entities
 
 
-def apply_to_data(entities, func):
+def apply_to_data(entities, func, key='frame'):
     for entity in entities:
-        entity['frame'] = func(entity['frame'])
+        entity[key] = func(entity[key])
     return entities
 
 
 def jsonify_df(df):
     return df.to_json()
 
+
+def dictify_df(df):
+    return df.to_dict()
 
 def save_entities(entities, path):
     jsonified_entities = apply_to_data(entities, jsonify_df)

@@ -1,6 +1,18 @@
 import pandas as pd
 
 
+def hash_df(df):
+    return pd.util.hash_pandas_object(df, index=True).sum()
+
+
+def get_entity_id(entity):
+    return f'{entity["url"]}@{hash_df(entity["frame"])}'
+
+
+def get_url_from_entity_id(entity_id):
+    return '@'.join(entity_id.split('@')[:-1])
+
+
 def get_float_values_ratio(df):
     distr = calc_type_distribution(df)
     float_ratio = distr['float_val_count'] / distr['total_count']

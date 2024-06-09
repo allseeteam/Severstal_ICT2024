@@ -1,7 +1,7 @@
 from extract import *  # noqa
 from search.text import normalize_string
 from search.rank import calc_factors, factors_to_list, rank
-from search.entity import get_entity_id, normalize_entity
+from search.entity import normalize_entity
 from collections import defaultdict
 from math import log
 

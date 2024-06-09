@@ -101,6 +101,9 @@ class Data(models.Model):
         choices=DATA_TYPES,
         max_length=16
     )
+    meta_data = models.JSONField(
+        verbose_name='Мета данные'
+    )
     data = models.JSONField(
         verbose_name='Данные'
     )

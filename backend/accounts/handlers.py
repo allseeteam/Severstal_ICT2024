@@ -158,26 +158,18 @@ class SiteParser:
             for url, content in zip(urls, urls_content):
                 if content.page_content.startswith('Error:'):
                     continue
-                web_pages.append(
-                    models.WebPage(
-                        url=url,
-                        content=content.page_content,
-                        update_date=now
-                    )
-                )
+                
+                # исключаем страницы без ссылок, потому что
+                # большая вероятность, что сработала защита от парсинга
+                # или ddos.
+                urls = self.extract_urls_from_page(url, content.page_content)
+                if len(urls) == 0:
+                    continue
 
-            # Пока механизм обновления уже скаченных не предусмотрен
-            web_pages = models.WebPage.objects.bulk_create(
-                objs=web_pages, batch_size=700, ignore_conflicts=True
-            )
+                print(f'Скачана ссылка: {url}')
 
-            # Тут надо запускать преобразование в Data
-            for page in web_pages:
-                print(f'Скачана ссылка: {page.url}')
+                DataParser.page_content_to_data(content=content.page_content)
 
-                DataParser.page_content_to_data(content=page.content)
-
-                urls = self.extract_urls_from_page(page)
                 existing_urls = models.WebPage.objects.filter(
                     url__in=urls
                 ).values_list('url', flat=True)
@@ -187,11 +179,26 @@ class SiteParser:
                     for url in urls
                     if url not in existing_urls
                 ]
+                
+                web_pages.append(
+                    models.WebPage(
+                        url=url,
+                        content=content.page_content,
+                        update_date=now
+                    )
+                )
 
 
-    def extract_urls_from_page(self, page: models.WebPage):
-        site = self.get_url_site(page.url)
-        soup = BeautifulSoup(page.content)
+
+            # Пока механизм обновления уже скаченных не предусмотрен
+            web_pages = models.WebPage.objects.bulk_create(
+                objs=web_pages, batch_size=700, ignore_conflicts=True
+            )
+
+
+    def extract_urls_from_page(self, url: str, content: str):
+        site = self.get_url_site(url)
+        soup = BeautifulSoup(content)
         urls = set()
         for a in soup.find_all('a'):
             href = a.attrs.get('href')

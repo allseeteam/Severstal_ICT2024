@@ -131,4 +131,12 @@ dmypy.json
 # VSCode
 .vscode
 
+# Some backend staff
 data
+
+# Some analytic staff
+.ipynb_checkpoints
+.DS_Store
+*.zip
+*.xls
+*.xlsx

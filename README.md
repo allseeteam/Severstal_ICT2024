@@ -1,6 +1,7 @@
-#Запуск бекенда в режиме разработки локально.
+# Запуск бекенда в режиме разработки локально.
 
 Создание и активация виртуального окружения:
+
 ```
 python -m venv venv
 . venv/bin/activate
@@ -11,6 +12,7 @@ python -m venv venv
 - При необходимости внести изменения
 
 Создание контейнеров БД
+
 ```
 sudo docker compose -f docker-compose-dev.yml up -d
 ```
@@ -18,6 +20,7 @@ sudo docker compose -f docker-compose-dev.yml up -d
 Установка зависимостей:
 
 Для работы LangChain на Linux:
+
 ```
 sudo apt-get install libwoff1 libwebpdemux2 libenchant-2-2  libsecret-1-0  libhyphen0 libegl1 lib evdev2 libgles2 
 ```
@@ -43,6 +46,12 @@ python manage.py createsuperuser
 Запуск сервера разработчика:
 ```
 python manage.py runserver
+```
+
+Установка playwright (движок для хрома или что)
+
+```
+playwright install
 ```
 
 Запуск парсинга первоначальной БД страниц

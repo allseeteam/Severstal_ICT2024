@@ -65,3 +65,9 @@ urllib3==2.2.1
 vine==5.1.0
 wcwidth==0.2.13
 yarl==1.9.4
+psycopg2-binary
+pandas==2.2.2
+camelot-py[base]
+pypdf
+opencv-python
+pdfplumber

@@ -62,7 +62,7 @@ class DataParser:
         for entity in entities:
             objs.append(
                 models.Data(
-                    index_id=str(uuid.uuid4()), # Переделать!!!
+                    index_id=get_entity_id(entity),
                     type=models.Data.WEB_PAGE,
                     data_type=models.Data.DATA_TYPES,
                     page=page,

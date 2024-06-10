@@ -1,7 +1,6 @@
+import math
 import bs4
 import pandas as pd
-import numpy as np
-import tqdm
 
 
 import xml.etree.ElementTree as et
@@ -19,6 +18,8 @@ def get_tables_from_raw_html(content: str, only_df=True) -> list[dict]:
     Возвращает список таблиц в формате
     [{'data': df, 'meta': caption}]
     """
+    if content == 'nan' or (type(content) == float and math.isnan(content)):
+        return []
     tree = bs4.BeautifulSoup(content, features="html.parser")
 
     tables = []

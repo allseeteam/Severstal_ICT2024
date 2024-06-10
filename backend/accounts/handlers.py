@@ -1,8 +1,9 @@
 from queue import Queue
 import time
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from urllib.parse import urlparse
 from datetime import datetime
+import uuid
 
 from bs4 import BeautifulSoup
 from django.utils import timezone
@@ -11,6 +12,7 @@ import requests
 
 from analyst.settings import BASE_DIR
 
+from extract.utils import get_entity_id
 from extract import prepary_entities
 
 from . import models
@@ -54,44 +56,33 @@ class FedStatParser:
 
 class DataParser:
     @classmethod
-    def page_content_to_data(cls, content: str, url: str) -> models.Data:
-        entities = prepary_entities(content, url)
-        data = []
+    def page_content_to_data(cls, page: models.WebPage) -> List[models.Data]:
+        entities = prepary_entities(page.content, page.url)
+        objs = []
         for entity in entities:
-            data_row = models.Data.objects.create(
-                type=models.Data.WEB_PAGE,
-                data_type=models.Data.DATA_TYPES,
-                url=entity['url'],
-                data=entity['frame'],
-                meta_data=entity['meta'],
-                date=datetime.today(),
-                version=0,
-                # еще можно доставать entity['id'] - это уникальный ключ entity
-                # (строка вида url@dataframe_hash)
+            objs.append(
+                models.Data(
+                    index_id=str(uuid.uuid4()), # Переделать!!!
+                    type=models.Data.WEB_PAGE,
+                    data_type=models.Data.DATA_TYPES,
+                    page=page,
+                    data=entity['frame'],
+                    meta_data=entity['meta'],
+                    date=datetime.today(),
+                    version=0,
+                )
             )
-            print('CREATED ROW')
-            print(data_row)
-            data.append(data_row)
-        models.Data
-        return data
+
+        return models.Data.objects.bulk_create(objs=objs, ignore_conflicts=True)
 
     @classmethod
-    def pdf_to_data(cls, content: str) -> models.Data:
-        return
-        return models.Data.objects.create(
-            type=models.Data.FILE,
-            
-
-        )
+    def pdf_to_data(cls, content: str) -> List[models.Data]:
+        pass
 
     @classmethod
-    def video_to_data(cls, content: str) -> models.Data:
-        return
-        return models.Data.objects.create(
-            type=models.Data.VIDEO,
-            
+    def video_to_data(cls, content: str) -> List[models.Data]:
+        pass
 
-        )
 
 class SiteParser:
     FILE_FORMATS = (
@@ -178,13 +169,13 @@ class SiteParser:
                 # исключаем страницы без ссылок, потому что
                 # большая вероятность, что сработала защита от парсинга
                 # или ddos.
-                urls = self.extract_urls_from_url_and_content(url, content.page_content)
+                title, urls = self.extract_urls_and_title_from_url_and_content(
+                    url, content.page_content
+                )
                 if len(urls) == 0:
                     continue
 
                 print(f'Скачана ссылка: {url}')
-
-                DataParser.page_content_to_data(content=content.page_content, url=url)
 
                 existing_urls = models.WebPage.objects.filter(
                     url__in=urls
@@ -196,45 +187,37 @@ class SiteParser:
                     if url not in existing_urls
                 ]
                 
-                web_pages.append(
-                    models.WebPage(
+                if not models.WebPage.objects.filter(
+                    url=url
+                ).exists():
+                    page = models.WebPage.objects.create(
+                        title=title,
                         url=url,
                         content=content.page_content,
                         update_date=now
                     )
-                )
 
-
+                    DataParser.page_content_to_data(
+                        page
+                    )
+                
 
             # Пока механизм обновления уже скаченных не предусмотрен
-            web_pages = models.WebPage.objects.bulk_create(
+            models.WebPage.objects.bulk_create(
                 objs=web_pages, batch_size=700, ignore_conflicts=True
             )
 
-            # Тут надо запускать преобразование в Data
-            for page in web_pages:
-                print(f'Скачана ссылка: {page.url}')
-                # print(f'CONTENT={page.content}')
-                DataParser.page_content_to_data(content=page.content, url=page.url)
 
-                urls = self.extract_urls_from_page(page)
-                existing_urls = models.WebPage.objects.filter(
-                    url__in=urls
-                ).values_list('url', flat=True)
-    
-                [
-                    self.add_url_to_queue(url)
-                    for url in urls
-                    if url not in existing_urls
-                ]
+    def extract_urls_and_title_from_url_and_content(
+            self, url: str, content: str
+        ) -> Tuple[str, List[str]]:
+        site = self.get_url_site(url)
+        soup = BeautifulSoup(content)
+        title = ''
+        title_tag = soup.find('title')
+        if title_tag:
+            title = title_tag.string
 
-    def extract_urls_from_url_and_content(self, url, content):
-        page = models.WebPage(url=url, content=content)
-        return self.extract_urls_from_page(page)
-
-    def extract_urls_from_page(self, page: models.WebPage):
-        site = self.get_url_site(page.url)
-        soup = BeautifulSoup(page.content)
         urls = set()
         for a in soup.find_all('a'):
             href = a.attrs.get('href')
@@ -248,7 +231,7 @@ class SiteParser:
                         urls.add(f'{site}{href[1:]}')
                     elif href[0] != '.':
                         urls.add(f'{site}{href}')
-        return urls
+        return title, urls
     
     def get_url_site(self, url: str) -> str:
         parsed_url = urlparse(url)

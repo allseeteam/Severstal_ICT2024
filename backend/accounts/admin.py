@@ -5,10 +5,11 @@ from . import models
 
 @admin.register(models.Data)
 class DataAdmin(admin.ModelAdmin):
-    pass
+    readonly_fields = ('page', 'file')
 
-@admin.register(models.Account)
-class AccountAdmin(admin.ModelAdmin):
+
+@admin.register(models.Report)
+class ReportAdmin(admin.ModelAdmin):
     pass
 
 
@@ -17,6 +18,6 @@ class WebPageAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(models.UserFiles)
-class UserFilesAdmin(admin.ModelAdmin):
+@admin.register(models.Files)
+class FilesAdmin(admin.ModelAdmin):
     pass

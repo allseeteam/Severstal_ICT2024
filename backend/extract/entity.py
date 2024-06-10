@@ -1,3 +1,4 @@
+from io import StringIO
 from extract.process_df import (
     get_entities_from_html_df,
     get_entities_from_html,
@@ -6,6 +7,7 @@ from extract.process_df import (
     find_header,
     filter_entities,
 )
+from extract.utils import jsonify_df, dictify_df
 import json
 import pandas as pd
 
@@ -52,13 +54,6 @@ def apply_to_data(entities, func, key='frame'):
     return entities
 
 
-def jsonify_df(df):
-    return df.to_json()
-
-
-def dictify_df(df):
-    return df.to_dict()
-
 def save_entities(entities, path):
     jsonified_entities = apply_to_data(entities, jsonify_df)
     with open(path, 'w') as f:
@@ -73,4 +68,4 @@ def read_entities(path):
 
 
 def read_entity_from_json(df_in_json):
-    return pd.read_json(df_in_json)
+    return pd.read_json(StringIO(df_in_json))

@@ -1,4 +1,9 @@
+from io import StringIO
 import pandas as pd
+
+
+def hash_entity(entity):
+    return hash(frozenset(entity.items()))
 
 
 def hash_df(df):
@@ -6,7 +11,11 @@ def hash_df(df):
 
 
 def get_entity_id(entity):
-    return f'{entity["url"]}@{hash_df(entity["frame"])}'
+    if isinstance(entity['frame'], pd.DataFrame):
+        entity['frame'] = jsonify_df(entity['frame'])
+        entity_hash = hash_entity(entity)
+        entity['frame'] = pd.read_json(StringIO(entity['frame']))
+    return f'{entity["url"]}@{entity_hash}'
 
 
 def get_url_from_entity_id(entity_id):
@@ -119,3 +128,11 @@ def is_type(x, type):
         # print('Overflow error:', x)
         pass
     return False
+
+
+def jsonify_df(df):
+    return df.to_json()
+
+
+def dictify_df(df):
+    return df.to_dict()

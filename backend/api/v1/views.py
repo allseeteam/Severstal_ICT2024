@@ -38,7 +38,9 @@ class ReportViewSet(viewsets.ModelViewSet):
     model = Report
 
     def get_serializer_class(self):
-        return super().get_serializer_class()
+        if self.action == 'create':
+            return CreateReportSerializer
+        return ReportSerializer
     
     @atomic
     def create(self, request, *args, **kwargs):

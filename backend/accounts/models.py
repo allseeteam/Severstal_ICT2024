@@ -26,23 +26,29 @@ class SearchQuery(models.Model):
     class Meta:
         verbose_name = 'Поисковый запрос'
         verbose_name_plural = 'Поисковые запросы'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'text'],
+                name='%(app_label)s_%(class)s_uniq'
+            )
+        ]
 
     def __str__(self) -> str:
         return f'Пользовательский запрос: {self.text}'
     
 
-class Account(models.Model):
+class Report(models.Model):
     user = models.ForeignKey(
         'users.User',
         on_delete=models.SET_NULL,
-        related_name='accounts',
+        related_name='reports',
         verbose_name='Пользователь',
         null=True
     )
     search_query = models.ForeignKey(
         'SearchQuery',
         on_delete=models.SET_NULL,
-        related_name='accounts',
+        related_name='reports',
         verbose_name='Поисковый запрос',
         null=True
     )
@@ -51,13 +57,32 @@ class Account(models.Model):
     )
     data = models.ManyToManyField(
         'Data',
+        through='ReportBlock',
         verbose_name='Данные',
-        related_name='accounts'
+        related_name='reports'
     )
 
     class Meta:
         verbose_name = 'Аналитический отчет'
         verbose_name_plural = 'Аналитические отчеты'
+
+
+class ReportBlock(models.Model):
+    report = models.ForeignKey(
+        'Report',
+        on_delete=models.CASCADE,
+        related_name='blocks',
+        verbose_name='Отчет'
+    )
+    data = models.ForeignKey(
+        'Data',
+        on_delete=models.PROTECT,
+        related_name='report_blocks',
+        verbose_name='Данные',
+    )
+    position = models.PositiveIntegerField(
+        'Позиция'
+    )
 
 
 class Data(models.Model):
@@ -79,18 +104,23 @@ class Data(models.Model):
         (REFERENCE, 'Справочник')
     )
 
+    index_id = models.CharField(
+        unique=True,
+    )
     type = models.CharField(
         'Тип источника данных',
         choices=SOURCE_TYPES,
         # max_length=16
     )
-    url = models.CharField(
-        'URL',
-        max_length=1024,
-        blank=True
+    page = models.ForeignKey(
+        'WebPage',
+        on_delete=models.SET_NULL,
+        related_name='data',
+        verbose_name='Интернет страницы',
+        null=True
     )
-    file = models.OneToOneField(
-        'UserFiles',
+    file = models.ForeignKey(
+        'Files',
         on_delete=models.SET_NULL,
         related_name='data',
         verbose_name='Пользовательский файл',
@@ -125,6 +155,9 @@ class WebPage(models.Model):
         max_length=1024,
         unique=True
     )
+    title = models.CharField(
+        'Title'
+    )
     content = models.TextField(
         'Содержание страницы',
         blank=True
@@ -143,7 +176,7 @@ class WebPage(models.Model):
         return self.url
 
 
-class UserFiles(models.Model):
+class Files(models.Model):
     user = models.ForeignKey(
         'users.User',
         on_delete=models.SET_NULL,

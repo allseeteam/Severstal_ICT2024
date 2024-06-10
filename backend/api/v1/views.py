@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.transaction import atomic
 from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -39,6 +40,7 @@ class ReportViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         return super().get_serializer_class()
     
+    @atomic
     def create(self, request, *args, **kwargs):
         serializer = CreateReportSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)

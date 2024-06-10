@@ -73,7 +73,26 @@ class CreateReportSerializer(serializers.ModelSerializer):
         return report
     
 
+class ReportBlockSerializer(serializers.ModelSerializer):
+    represent = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = ReportBlock
+        fields = (
+            'represent', 'position'
+        )
+
+    def get_represent(self, obj):
+        return obj.data.data
+        entity = {
+            'meta': obj.data.meta_data,
+            'url': obj.page.url if obj.page else '',
+            'frame': obj.data.data
+        }
+
+
 class ReportSerializer(serializers.ModelSerializer):
+    blocks = ReportBlockSerializer(many=True)
     class Meta:
         model = Report
-        fields = ('user',)
+        fields = ('user', 'blocks')

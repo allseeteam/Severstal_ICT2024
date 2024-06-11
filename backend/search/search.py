@@ -1,7 +1,10 @@
-from extract import *  # noqa
+# from extract import *  # noqa
+from search.query import enrich_query
 from search.text import normalize_string
+from extract import get_entity_id
 from search.rank import calc_factors, factors_to_list, rank
 from search.entity import normalize_entity
+
 from collections import defaultdict
 from math import log
 
@@ -84,7 +87,8 @@ class SearchEngine:
         return ranked_candidates
 
     def search(self, query: str, page=1, page_size=10) -> dict[str, float]:
-        keywords = normalize_string(query).split()
+        keywords = enrich_query(query)
+        # keywords = normalize_string(query).split()
         url_scores: dict[str, float] = {}
         for kw in keywords:
             kw_urls_score = self.bm25(kw)
@@ -102,7 +106,11 @@ class SearchEngine:
             self._index[word][url] += 1
 
     def index_entity(self, entity):
-        entity_id = get_entity_id(entity)
+        if 'index_id' in entity:
+            entity_id = entity['index_id']
+        else:
+            # старое поведение, если хотим индексировать из ноутбука
+            entity_id = get_entity_id(entity)
         search_content = normalize_entity(entity)
         self.index(entity_id, search_content, entity)
 

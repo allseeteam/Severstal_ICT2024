@@ -1,8 +1,9 @@
+import pandas as pd
 from collections import Counter
 
 from tqdm import tqdm
 from extract.html import get_tables_from_raw_html
-from extract.utils import calc_type_distribution
+from extract.utils import calc_type_distribution, convert_to_datetime, convert_to_float
 
 
 def get_entities_from_html_df(df):
@@ -97,7 +98,114 @@ def find_header(df):
     else:
         header_size = 0
 
-    if header_size > 0:
+    if header_size == 1:
+        df.columns = df.iloc[0, :]
+        df = df.iloc[header_size:]
+
+    if header_size > 1:
         df.columns = [df.iloc[i, :] for i in range(header_size)]
         df = df.iloc[header_size:]
     return df
+
+
+def replace_df_values(df):
+    to_replace = ['X', 'Х', '', '-', '—']
+    df = df.replace(to_replace, None).dropna(
+        axis=0, how='all').dropna(axis=1, how='all')
+    return df
+
+
+def argmax(pairs):
+    return max(pairs, key=lambda x: x[1])[0]
+
+
+def argmax_index(values):
+    return argmax(enumerate(values))
+
+
+def convert_column_type(df_col):
+    distr = calc_type_distribution(df_col)
+    type_distr = {
+        'float': distr['float_val_count'],
+        'datetime': distr['datetime_val_count'],
+        'na': distr['na_val_count'],
+        'str': distr['str_val_count'],
+    }
+    convert_func_dict = {
+        'float': lambda x: convert_to_float(x, ignore_error=True),
+        'datetime': convert_to_datetime,
+        'na': lambda x: None,
+        'str': str
+    }
+
+    try:
+        col_type = argmax(type_distr.items())
+        col_new_type = df_col.apply(convert_func_dict[col_type])
+        return col_new_type, col_type, col_new_type.nunique()
+    except ValueError:
+        pass
+    if not isinstance(df_col.nunique(), int):
+        n_unique = 0
+    else:
+        n_unique = df_col.nunique()
+    return df_col.copy(), 'str', n_unique
+
+
+def is_categorical(series, unique_values, col_type):
+    if col_type in ['na', 'datetime']:
+        return False
+    if col_type == 'float':
+        try:
+            # если хотя бы одно флот значение - число
+            if all(series.astype(int) == series):
+                return False
+        except ValueError:
+            pass
+    threshold = max(len(series) * 0.1, 5)  # минимум - 5 значений, чтобы была категория
+    if unique_values <= threshold and unique_values != len(series):
+        return True
+    return False
+
+
+def convert_each_column_df(df):
+    col_types = {}
+    col_unique_values = {}
+    for col in df.columns:
+        try:
+            df.loc[:, col], col_type, unique_values = convert_column_type(
+                df.loc[:, col])
+        except ValueError:
+            df.loc[:, col] = None
+            col_type = 'na'
+            unique_values = 0
+        if unique_values == 1:
+            col_type = 'na'
+        if is_categorical(df.loc[:, col], unique_values, col_type):
+            col_type = 'category'
+        if col_type == 'float':
+            # монотонные последовательности c шагом 1 - скорее всего индексы
+            is_monotonic = all(df.loc[:, col].diff().dropna() == 1)
+            if is_monotonic:
+                col_type = 'index'
+        col_types[col] = col_type
+        col_unique_values[col] = unique_values
+
+    col_by_types = {}
+    for k, v in col_types.items():
+        col_by_types[v] = col_by_types.get(v, []) + [k]
+    return df, col_by_types, col_unique_values
+
+
+def preprocess_entities(entities):
+    for entity in entities:
+        df = entity['frame']
+        if not isinstance(df, pd.DataFrame):
+            df = pd.read_json(df)
+        df = replace_df_values(df)
+        df = find_header(df)
+        df = replace_df_values(df)
+        df, col_types, col_unique_values = convert_each_column_df(df)
+        entity['frame'] = df
+        entity['col_types'] = col_types
+        entity['col_unique_values'] = col_unique_values
+    return entities

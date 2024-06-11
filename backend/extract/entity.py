@@ -18,17 +18,10 @@ def prepary_entities(raw_html, url):
 
     также хранит данные (поле frame) как строку (для записи в json поле)
     """
-    print(raw_html)
-    print()
-    print()
-    print()
     entities = get_entities_from_html(raw_html, url)
     entities = deduplicate_entities(entities)
     entities = calculate_ratios(entities)
-    # entities = filter_entities(entities)
-    # entities = apply_to_data(entities, find_header)
     entities = apply_to_data(entities, dictify_df)
-    print(entities)
     return entities
 
 
@@ -64,6 +57,12 @@ def read_entities(path):
     with open(path) as f:
         entities = json.loads(f.read())
     entities = apply_to_data(entities, read_entity_from_json)
+    return entities
+
+
+def read_entities_dict(path):
+    with open(path) as f:
+        entities = json.loads(f.read())
     return entities
 
 

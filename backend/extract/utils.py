@@ -16,11 +16,6 @@ def hash_df(df):
 def get_entity_id(entity):
     if isinstance(entity['frame'], pd.DataFrame):
         entity['frame'] = jsonify_df(entity['frame'])
-        entity['frame'] = pd.read_json(StringIO(entity['frame']))
-    else:
-        entity['frame'] = json.loads(entity['frame'])
-        df = pd.DataFrame(entity['frame'])
-        entity['frame'] = jsonify_df(df)
         entity_hash = hash_entity(entity)
         entity['frame'] = pd.read_json(StringIO(entity['frame']))
     else:

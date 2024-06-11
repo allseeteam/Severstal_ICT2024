@@ -1,4 +1,5 @@
-from extract import *  # noqa
+# from extract import *  # noqa
+from extract import get_entity_id
 from search.text import normalize_string
 from search.rank import calc_factors, factors_to_list, rank
 from search.entity import normalize_entity
@@ -102,7 +103,11 @@ class SearchEngine:
             self._index[word][url] += 1
 
     def index_entity(self, entity):
-        entity_id = get_entity_id(entity)
+        if 'index_id' in entity:
+            entity_id = entity['index_id']
+        else:
+            # старое поведение, если хотим индексировать из ноутбука
+            entity_id = get_entity_id(entity)
         search_content = normalize_entity(entity)
         self.index(entity_id, search_content, entity)
 

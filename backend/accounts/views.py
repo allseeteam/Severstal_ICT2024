@@ -7,13 +7,20 @@ from extract import plotly_obj_to_json, plot_entity, preprocess_entities
 
 import pickle
 
-search_engine = pickle.load(open('search.pkl', 'rb'))
+try:
+    search_engine = pickle.load(open('search.pkl', 'rb'))
+except FileNotFoundError:
+    print('No search.pkl file found')
+    pass
 
 
 def search(request):
     query = request.GET['q']
     result = search_engine.search(query)
-    return JsonResponse(result, safe=False)
+    index_ids = list(map(lambda x: x[0], result))
+    entities = models.Data.objects.filter(index_id__in=index_ids)
+    entities = [model_to_dict(r) for r in entities]
+    return JsonResponse(entities, safe=False)
 
 
 def make_report(request):

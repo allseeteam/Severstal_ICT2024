@@ -1,7 +1,7 @@
 from datetime import datetime
 from io import StringIO
 import pandas as pd
-
+import json
 
 def hash_entity(entity):
     # entity['meta'] = str(entity['meta'])
@@ -19,7 +19,9 @@ def get_entity_id(entity):
         entity_hash = hash_entity(entity)
         entity['frame'] = pd.read_json(StringIO(entity['frame']))
     else:
-        entity['frame'] = jsonify_df(pd.DataFrame(entity['frame']))
+        entity['frame'] = json.loads(entity['frame'])
+        df = pd.DataFrame(entity['frame'])
+        entity['frame'] = jsonify_df(df)
         entity_hash = hash_entity(entity)
         entity['frame'] = pd.read_json(StringIO(entity['frame']))
     return f'{entity["url"]}@{entity_hash}'

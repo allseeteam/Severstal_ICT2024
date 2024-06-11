@@ -148,7 +148,6 @@ def convert_column_type(df_col):
 
 
 def convert_each_column_df(df):
-    # print(df)
     col_types = {}
     col_unique_values = {}
     for col in df.columns:

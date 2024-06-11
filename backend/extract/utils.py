@@ -13,8 +13,8 @@ def hash_df(df):
 def get_entity_id(entity):
     if isinstance(entity['frame'], pd.DataFrame):
         entity['frame'] = jsonify_df(entity['frame'])
-        entity_hash = hash_entity(entity)
         entity['frame'] = pd.read_json(StringIO(entity['frame']))
+    entity_hash = hash_entity(entity)
     return f'{entity["url"]}@{entity_hash}'
 
 

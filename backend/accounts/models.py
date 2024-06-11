@@ -80,6 +80,7 @@ class ReportBlock(models.Model):
         related_name='report_blocks',
         verbose_name='Данные',
     )
+    representation = models.JSONField('Представление')
     position = models.PositiveIntegerField(
         'Позиция'
     )

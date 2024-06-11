@@ -18,6 +18,11 @@ ALLOWED_HOSTS = os.getenv(
     default='localhost 127.0.0.1 [::1] testserver',
 ).split(' ')
 
+CSRF_TRUSTED_ORIGINS = [
+    f'https://{host}'
+    for host in ALLOWED_HOSTS
+]
+
 AUTH_USER_MODEL = 'users.User'
 
 INSTALLED_APPS = [

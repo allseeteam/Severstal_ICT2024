@@ -1,8 +1,9 @@
+import pandas as pd
 from collections import Counter
 
 from tqdm import tqdm
 from extract.html import get_tables_from_raw_html
-from extract.utils import calc_type_distribution
+from extract.utils import calc_type_distribution, convert_to_datetime, convert_to_float
 
 
 def get_entities_from_html_df(df):
@@ -97,7 +98,78 @@ def find_header(df):
     else:
         header_size = 0
 
-    if header_size > 0:
+    if header_size == 1:
+        df.columns = df.iloc[0, :]
+        df = df.iloc[header_size:]
+
+    if header_size > 1:
         df.columns = [df.iloc[i, :] for i in range(header_size)]
         df = df.iloc[header_size:]
     return df
+
+
+def replace_df_values(df):
+    to_replace = ['X', 'Х', '', '-', '—']
+    df = df.replace(to_replace, None).dropna(
+        axis=0, how='all').dropna(axis=1, how='all')
+    return df
+
+
+def argmax(pairs):
+    return max(pairs, key=lambda x: x[1])[0]
+
+
+def argmax_index(values):
+    return argmax(enumerate(values))
+
+
+def convert_column_type(df_col):
+    distr = calc_type_distribution(df_col)
+    type_distr = {
+        'float': distr['float_val_count'],
+        'datetime': distr['datetime_val_count'],
+        'na': distr['na_val_count'],
+        'str': distr['str_val_count'],
+    }
+    convert_func_dict = {
+        'float': lambda x: convert_to_float(x, ignore_error=True),
+        'datetime': convert_to_datetime,
+        'na': lambda x: None,
+        'str': str
+    }
+
+    try:
+        col_type = argmax(type_distr.items())
+        col_new_type = df_col.apply(convert_func_dict[col_type])
+        return col_new_type, col_type, col_new_type.nunique()
+    except ValueError:
+        pass
+    return df_col.copy(), 'str', df_col.nunique()
+
+
+def convert_each_column_df(df):
+    col_types = {}
+    col_unique_values = {}
+    for col in df.columns:
+        df.loc[:, col], col_type, unique_values = convert_column_type(df.loc[:, col])
+        col_types[col] = col_type
+        col_unique_values[col] = unique_values
+
+    col_by_types = {}
+    for k, v in col_types.items():
+        col_by_types[v] = col_by_types.get(v, []) + [k]
+    return df, col_by_types, col_unique_values
+
+
+def preprocess_entities(entities):
+    for entity in entities:
+        df = entity['frame']
+        df = pd.read_json(df)
+        df = replace_df_values(df)
+        df = find_header(df)
+        df = replace_df_values(df)
+        df, col_types, col_unique_values = convert_each_column_df(df)
+        entity['frame'] = df
+        entity['col_types'] = col_types
+        entity['col_unique_values'] = col_unique_values
+    return entities

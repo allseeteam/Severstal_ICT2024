@@ -1,3 +1,4 @@
+import pandas as pd
 from collections import Counter
 
 from tqdm import tqdm
@@ -164,6 +165,7 @@ def convert_each_column_df(df):
 def preprocess_entities(entities):
     for entity in entities:
         df = entity['frame']
+        df = pd.read_json(df)
         df = replace_df_values(df)
         df = find_header(df)
         df = replace_df_values(df)

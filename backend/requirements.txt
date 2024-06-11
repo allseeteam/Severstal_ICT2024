@@ -74,3 +74,6 @@ pdfplumber
 ruwordnet
 pymorphy3
 plotly
+djangorestframework
+drf-spectacular
+drf-spectacular-sidecar

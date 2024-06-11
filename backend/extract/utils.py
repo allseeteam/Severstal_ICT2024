@@ -4,7 +4,9 @@ import pandas as pd
 
 
 def hash_entity(entity):
-    return hash(frozenset(entity.items()))
+    # entity['meta'] = str(entity['meta'])
+    return hash(entity['frame'])
+    # return hash(frozenset(entity.items()))
 
 
 def hash_df(df):
@@ -14,6 +16,10 @@ def hash_df(df):
 def get_entity_id(entity):
     if isinstance(entity['frame'], pd.DataFrame):
         entity['frame'] = jsonify_df(entity['frame'])
+        entity_hash = hash_entity(entity)
+        entity['frame'] = pd.read_json(StringIO(entity['frame']))
+    else:
+        entity['frame'] = jsonify_df(pd.DataFrame(entity['frame']))
         entity_hash = hash_entity(entity)
         entity['frame'] = pd.read_json(StringIO(entity['frame']))
     return f'{entity["url"]}@{entity_hash}'

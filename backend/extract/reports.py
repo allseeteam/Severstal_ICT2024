@@ -10,8 +10,8 @@ def get_table_fig(ent, first_n=20, width=600, height=800):
     fig = go.Figure(
         data=[
             go.Table(
-                header=dict(values=df.columns),
-                cells=dict(values=df.iloc[col_index_size:first_n].values.T),
+                header=dict(values=df.columns.tolist()),
+                cells=dict(values=df.iloc[col_index_size:first_n].values.T.tolist()),
             )
         ],
     )
@@ -47,8 +47,8 @@ def get_plot_fig(ent, x_col, y_cols, sort_by_x=True, first_n=20, width=600, heig
     fig = go.Figure(
         data=[
             go.Scatter(
-                x=df[x_col].values,
-                y=df[y_col].values,
+                x=df[x_col].values.tolist(),
+                y=df[y_col].values.tolist(),
                 name=y_col
             )
             for y_col in y_cols
@@ -98,6 +98,7 @@ def get_plot_type(entity):
     unique_values = entity['col_unique_values']
 
     plot_type_x = None
+    x_col = None
     if 'datetime' in entity['col_types']:
         # time series
         x_col = entity['col_types']['datetime'][0]
@@ -111,6 +112,7 @@ def get_plot_type(entity):
         pass
 
     plot_type_y = None
+    y_cols = []
     if 'float' in entity['col_types']:
         # series
         y_cols = entity['col_types']['float']

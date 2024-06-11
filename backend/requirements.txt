@@ -73,3 +73,4 @@ opencv-python
 pdfplumber
 ruwordnet
 pymorphy3
+plotly

@@ -1,3 +1,4 @@
+import pickle
 from django.db import models
 from django.db.transaction import atomic
 from rest_framework import viewsets, status
@@ -8,6 +9,12 @@ from accounts.models import Data, Report, SearchQuery
 from .serializers import CreateReportSerializer, DataSearchSerializer, ReportSerializer
 
 
+search_engine = None
+try:
+    search_engine = pickle.load(open('search.pkl', 'rb'))
+except FileNotFoundError:
+    print('No search.pkl file found')
+
 class SearchView(viewsets.ViewSet):
     permission_classes = (IsAuthenticated,)
     serializer_class = DataSearchSerializer
@@ -17,12 +24,19 @@ class SearchView(viewsets.ViewSet):
         search_query = self.request.query_params.get('q')
         queryset = Data.objects.none()
         if search_query:
+            if search_engine:
+                result = search_engine.search(search_query)
+                index_ids = list(map(lambda x: x[0], result))
+                queryset = Data.objects.filter(
+                    index_id__in=index_ids
+                )
+            else:
+                queryset = Data.objects.all()
             SearchQuery.objects.get_or_create(
                 user=request.user,
                 text=search_query
             )
-            # Тут допишим, чтобы фильтровать
-            queryset = Data.objects.all() \
+            queryset = queryset \
                 .annotate(
                     name=models.F('page__title')
                 ) \

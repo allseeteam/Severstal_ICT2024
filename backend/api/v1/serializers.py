@@ -1,7 +1,10 @@
 from typing import List
+from django.forms import model_to_dict
 from rest_framework import serializers
 
 from accounts.models import Data, Report, ReportBlock, SearchQuery
+from extract.reports import get_all_possible_charts, plot_entity, plotly_obj_to_json
+from extract.process_df import preprocess_entities
 
 
 class DataSearchSerializer(serializers.ModelSerializer):
@@ -58,41 +61,43 @@ class CreateReportSerializer(serializers.ModelSerializer):
         )
 
         data = Data.objects.filter(id__in=data_ids)
-        blocks = [
-            ReportBlock(
-                report=report,
-                data=d,
-                position=i+1
-            )
-            for i, d in enumerate(data) 
-        ]
+        entities = [model_to_dict(r) for r in data]
+        for entity in entities:
+            entity['frame'] = entity['data']
+            entity['meta'] = entity['meta_data']['title']
+
+        entities = preprocess_entities(entities)
+        raw_blocks = []
+        position = 1
+        for d, entity in zip(data, entities):
+            for chart in get_all_possible_charts(entity):
+                raw_blocks.append(
+                    ReportBlock(
+                        report=report,
+                        data=d,
+                        representation=plotly_obj_to_json(chart),
+                        position=position
+                    )
+                )
+                position += 1
+
         ReportBlock.objects.bulk_create(
-            objs=blocks
+            objs=raw_blocks
         )
 
         return report
     
 
 class ReportBlockSerializer(serializers.ModelSerializer):
-    represent = serializers.SerializerMethodField(read_only=True)
-
     class Meta:
         model = ReportBlock
         fields = (
-            'represent', 'position'
+            'representation', 'position'
         )
-
-    def get_represent(self, obj):
-        return obj.data.data
-        entity = {
-            'meta': obj.data.meta_data,
-            'url': obj.page.url if obj.page else '',
-            'frame': obj.data.data
-        }
 
 
 class ReportSerializer(serializers.ModelSerializer):
     blocks = ReportBlockSerializer(many=True)
     class Meta:
         model = Report
-        fields = ('user', 'blocks')
+        fields = ('id', 'blocks')

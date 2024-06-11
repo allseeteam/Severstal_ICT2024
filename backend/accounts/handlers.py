@@ -182,7 +182,6 @@ class SiteParser:
                     continue
 
             urls_content = AsyncChromiumLoader(urls).load()
-
             for url, content in zip(urls, urls_content):
                 if content.page_content.startswith('Error:'):
                     continue
@@ -242,7 +241,7 @@ class SiteParser:
             href = a.attrs.get('href')
             if href:
                 if href.startswith(site):
-                    return href, urls
+                    urls.add(href)
                 elif not href.startswith(
                     ('http', 'tel:', '/tel:', '/#', '#', 'mailto:', '/mailto:')
                 ):

@@ -1,5 +1,5 @@
 START_URLS = [
-    # 'https://cbr.ru/banking_sector/credit/coinfo/f101?regnum=3027&dt=2024-01-01'
+    'https://cbr.ru/banking_sector/credit/coinfo/f101?regnum=3027&dt=2024-01-01'
     # 'https://rosstat.gov.ru/folder/10705',
     # 'https://rosstat.gov.ru/statistics/accounts',
     # 'https://e-disclosure.ru/portal/company.aspx?id=1210',

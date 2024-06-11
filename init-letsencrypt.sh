@@ -22,7 +22,6 @@ if [ ! -e "$data_path/conf/options-ssl-nginx.conf" ] || [ ! -e "$data_path/conf/
   echo
 fi
 
-cp deploy/docker-compose.yml docker-compose.yml
 echo "### Creating dummy certificate for $domains ..."
 path="/etc/letsencrypt/live/$domains"
 mkdir -p "$data_path/conf/live/$domains"
@@ -74,5 +73,3 @@ echo
 
 echo "### Reloading nginx ..."
 docker compose exec nginx nginx -s reload
-
-rm docker-compose.yml

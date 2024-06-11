@@ -1,9 +1,12 @@
+from datetime import datetime
 from io import StringIO
 import pandas as pd
 
 
 def hash_entity(entity):
-    return hash(frozenset(entity.items()))
+    # entity['meta'] = str(entity['meta'])
+    return hash(entity['frame'])
+    # return hash(frozenset(entity.items()))
 
 
 def hash_df(df):
@@ -13,6 +16,10 @@ def hash_df(df):
 def get_entity_id(entity):
     if isinstance(entity['frame'], pd.DataFrame):
         entity['frame'] = jsonify_df(entity['frame'])
+        entity_hash = hash_entity(entity)
+        entity['frame'] = pd.read_json(StringIO(entity['frame']))
+    else:
+        entity['frame'] = jsonify_df(pd.DataFrame(entity['frame']))
         entity_hash = hash_entity(entity)
         entity['frame'] = pd.read_json(StringIO(entity['frame']))
     return f'{entity["url"]}@{entity_hash}'
@@ -92,7 +99,12 @@ def get_type(x):
 
 
 def is_datetime(x):
-    return is_type(x, lambda x: pd.to_datetime(x, infer_datetime_format=True))
+    can_be_converted = is_type(x, convert_to_datetime)
+    if not can_be_converted:
+        return False
+    dt = convert_to_datetime(x)
+    sanity_check = dt < datetime.today()
+    return can_be_converted and sanity_check
 
 
 def is_float(x):
@@ -106,14 +118,32 @@ def is_na(x):
 units = ['₽', 'р.', '$']
 
 
-def convert_to_float(x):
+def preproc_float(x):
     x = str(x)
-    if x.startswith('0'):
-        raise ValueError("it's not a float")
     x = x.replace(',', '.')
+
     for unit in units:
         x = x.replace(unit, '')
+    return x
+
+
+def convert_to_float(x, ignore_error=False):
+    x = preproc_float(x)
+
+    if x.startswith('0'):
+        raise ValueError("it's not a float")
+
+    if ignore_error:
+        try:
+            return float(x)
+        except Exception:
+            return None
+
     return float(x)
+
+
+def convert_to_datetime(x):
+    return pd.to_datetime(x)
 
 
 def is_type(x, type):

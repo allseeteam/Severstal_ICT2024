@@ -21,7 +21,7 @@ def _parse_tables_pdfplumber(pdf):
 
 
 def preprocess_df(df):
-    to_replace = ['X', 'Х', '']
+    to_replace = ['X', 'Х', '', '-', '—']
     df = df.replace(to_replace, None).dropna(
         axis=0, how='all').dropna(axis=1, how='all')
     df['_row_float_ratio'] = df.apply(get_float_values_ratio, axis=1)

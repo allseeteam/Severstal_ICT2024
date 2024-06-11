@@ -67,5 +67,11 @@ def read_entities(path):
     return entities
 
 
+def read_entities_dict(path):
+    with open(path) as f:
+        entities = json.loads(f.read())
+    return entities
+
+
 def read_entity_from_json(df_in_json):
     return pd.read_json(StringIO(df_in_json))

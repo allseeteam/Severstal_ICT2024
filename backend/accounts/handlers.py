@@ -78,6 +78,26 @@ class DataParser:
         return models.Data.objects.bulk_create(objs=objs, ignore_conflicts=True)
 
     @classmethod
+    def bulk_page_content_to_data(cls, pages: list[models.WebPage]) -> list[models.Data]:
+        objs = []
+        for page in pages:
+            entities = prepary_entities(page.content, page.url)
+            for entity in entities:
+                objs.append(
+                    models.Data(
+                        index_id=get_entity_id(entity),
+                        type=models.Data.WEB_PAGE,
+                        data_type=models.Data.DATA_TYPES,
+                        page=page,
+                        data=jsonify_df(entity['frame']),
+                        meta_data=entity['meta'],
+                        date=datetime.today(),
+                        version=0,
+                    )
+                )
+        return models.Data.objects.bulk_create(objs=objs, ignore_conflicts=True)
+
+    @classmethod
     def pdf_to_data(cls, content: str) -> List[models.Data]:
         pass
 

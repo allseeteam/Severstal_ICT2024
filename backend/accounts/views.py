@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from . import models
 from django.forms.models import model_to_dict
-from extract import plotly_obj_to_json, plot_entity, preprocess_entities
+from extract import plotly_obj_to_json, plot_entity, preprocess_entities, get_all_possible_charts
 # Create your views here.
 
 import pickle
@@ -37,5 +37,9 @@ def make_report(request):
         entity['meta'] = entity['meta_data']['title']
 
     entities = preprocess_entities(entities)
+    charts = []
+    for entity in entities:
+        for chart in get_all_possible_charts(entity):
+            charts.append(plotly_obj_to_json(chart))
     response = [plotly_obj_to_json(plot_entity(entity)) for entity in entities]
     return JsonResponse(response, safe=False)

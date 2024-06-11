@@ -3,6 +3,7 @@ from io import StringIO
 import pandas as pd
 import json
 
+
 def hash_entity(entity):
     # entity['meta'] = str(entity['meta'])
     return hash(entity['frame'])
@@ -105,12 +106,19 @@ def is_datetime(x):
     if not can_be_converted:
         return False
     dt = convert_to_datetime(x)
-    sanity_check = dt < datetime.today()
-    return can_be_converted and sanity_check
+    if dt > datetime.today():
+        return False
+    return True
 
 
 def is_float(x):
-    return is_type(x, convert_to_float)
+    can_be_converted = is_type(x, convert_to_float)
+    if not can_be_converted:
+        return False
+    x = convert_to_float(x)
+    if x > 10 ** 9:  # очень большие числа не хотим парсить как флоты
+        return False
+    return True
 
 
 def is_na(x):

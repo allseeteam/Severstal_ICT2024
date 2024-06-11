@@ -144,14 +144,49 @@ def convert_column_type(df_col):
         return col_new_type, col_type, col_new_type.nunique()
     except ValueError:
         pass
-    return df_col.copy(), 'str', df_col.nunique()
+    if not isinstance(df_col.nunique(), int):
+        n_unique = 0
+    else:
+        n_unique = df_col.nunique()
+    return df_col.copy(), 'str', n_unique
+
+
+def is_categorical(series, unique_values, col_type):
+    if col_type in ['na', 'datetime']:
+        return False
+    if col_type == 'float':
+        try:
+            # если хотя бы одно флот значение - число
+            if all(series.astype(int) == series):
+                return False
+        except ValueError:
+            pass
+    threshold = max(len(series) * 0.1, 5)  # минимум - 5 значений, чтобы была категория
+    if unique_values <= threshold and unique_values != len(series):
+        return True
+    return False
 
 
 def convert_each_column_df(df):
     col_types = {}
     col_unique_values = {}
     for col in df.columns:
-        df.loc[:, col], col_type, unique_values = convert_column_type(df.loc[:, col])
+        try:
+            df.loc[:, col], col_type, unique_values = convert_column_type(
+                df.loc[:, col])
+        except ValueError:
+            df.loc[:, col] = None
+            col_type = 'na'
+            unique_values = 0
+        if unique_values == 1:
+            col_type = 'na'
+        if is_categorical(df.loc[:, col], unique_values, col_type):
+            col_type = 'category'
+        if col_type == 'float':
+            # монотонные последовательности c шагом 1 - скорее всего индексы
+            is_monotonic = all(df.loc[:, col].diff().dropna() == 1)
+            if is_monotonic:
+                col_type = 'index'
         col_types[col] = col_type
         col_unique_values[col] = unique_values
 
@@ -164,7 +199,8 @@ def convert_each_column_df(df):
 def preprocess_entities(entities):
     for entity in entities:
         df = entity['frame']
-        df = pd.read_json(df)
+        if not isinstance(df, pd.DataFrame):
+            df = pd.read_json(df)
         df = replace_df_values(df)
         df = find_header(df)
         df = replace_df_values(df)

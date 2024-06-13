@@ -72,6 +72,7 @@ class CreateTemplateSerializer(serializers.ModelSerializer):
         meta_blocks = [
             MetaBlock(
                 query_template=block.get('query_template'),
+                position=block.get('position'),
                 template=template
             )
             for block in meta_blocks

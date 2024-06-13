@@ -37,6 +37,62 @@ class SearchQuery(models.Model):
         return f'Пользовательский запрос: {self.text}'
     
 
+class Theme(models.Model):
+    name = models.CharField(
+        'Название'
+    )
+
+    class Meta:
+        verbose_name = 'Тематика отчета'
+        verbose_name_plural = 'Тематики отчетов'
+
+    def __str__(self) -> str:
+        return self.name
+    
+
+class Template(models.Model):
+    name = models.CharField(
+        'Название'
+    )
+    theme = models.ForeignKey(
+        'Theme',
+        on_delete=models.SET_NULL,
+        related_name='templates',
+        verbose_name='Тематика отчета',
+        null=True
+    )
+
+    class Meta:
+        verbose_name = 'Шаблон отчета'
+        verbose_name_plural = 'Шаблоны отчетов'
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class MetaBlock(models.Model):
+    query_template = models.CharField(
+        'Шаблон запроса'
+    )
+    template = models.ForeignKey(
+        'Template',
+        on_delete=models.CASCADE,
+        related_name='meta_blocks',
+        verbose_name='Шаблон отчета'
+    )
+    position = models.PositiveIntegerField(
+        'Позиция'
+    )
+
+
+    class Meta:
+        verbose_name = 'Мета-блок отчета'
+        verbose_name_plural = 'Мета-блоки отчетов'
+
+    def __str__(self) -> str:
+        return self.query_template
+
+
 class Report(models.Model):
     user = models.ForeignKey(
         'users.User',
@@ -68,6 +124,15 @@ class Report(models.Model):
 
 
 class ReportBlock(models.Model):
+    READY = 'ready'
+    NOT_READY = 'not_ready'
+    ERROR = 'error'
+    READINESS_STATUSES = (
+        (READY, 'Готов'),
+        (NOT_READY, 'Не готов'),
+        (ERROR, 'Ошибка')
+    )
+
     report = models.ForeignKey(
         'Report',
         on_delete=models.CASCADE,
@@ -79,8 +144,14 @@ class ReportBlock(models.Model):
         on_delete=models.PROTECT,
         related_name='report_blocks',
         verbose_name='Данные',
+        null=True
     )
     representation = models.JSONField('Представление')
+    type = models.CharField('Тип')
+    readiness = models.CharField(
+        'Готовность',
+        choices=READINESS_STATUSES
+    )
     position = models.PositiveIntegerField(
         'Позиция'
     )
@@ -111,7 +182,6 @@ class Data(models.Model):
     type = models.CharField(
         'Тип источника данных',
         choices=SOURCE_TYPES,
-        # max_length=16
     )
     page = models.ForeignKey(
         'WebPage',

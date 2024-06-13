@@ -1,31 +1,34 @@
-import pickle
+from drf_spectacular import utils as spectacular_utils
 from django.db import models
 from django.db.transaction import atomic
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, mixins
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from accounts.models import Data, Report, SearchQuery
-from .serializers import CreateReportSerializer, DataSearchSerializer, ReportSerializer
+from accounts.models import Data, Report, ReportBlock, SearchQuery, Template, Theme
+from . import serializers
 
 
-search_engine = None
-try:
-    search_engine = pickle.load(open('search.pkl', 'rb'))
-except FileNotFoundError:
-    print('No search.pkl file found')
-
+@spectacular_utils.extend_schema_view(
+    list=spectacular_utils.extend_schema(
+        parameters=[
+            spectacular_utils.OpenApiParameter(
+                name='q', description='Поисковый запрос', type=str
+            ),
+        ]
+    )
+)
 class SearchView(viewsets.ViewSet):
     permission_classes = (IsAuthenticated,)
-    serializer_class = DataSearchSerializer
+    serializer_class = serializers.DataSearchSerializer
     
 
     def list(self, request):
         search_query = self.request.query_params.get('q')
         queryset = Data.objects.none()
         if search_query:
-            if search_engine:
-                result = search_engine.search(search_query)
+            if serializer.search_engine:
+                result = serializer.search_engine.search(search_query)
                 index_ids = list(map(lambda x: x[0], result))
                 queryset = Data.objects.filter(
                     index_id__in=index_ids
@@ -48,22 +51,62 @@ class SearchView(viewsets.ViewSet):
         return Response(serializer.data)
     
 
-class ReportViewSet(viewsets.ModelViewSet):
-    model = Report
+class ThemeViewSet(
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet
+):
+    model = Theme
+    queryset = Theme.objects.all()
+    serializer_class = serializers.ThemeSerializer
+
+
+class TemplateViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet
+):
+    queryset = Template.objects.all()
 
     def get_serializer_class(self):
         if self.action == 'create':
-            return CreateReportSerializer
-        return ReportSerializer
+            return serializers.CreateTemplateSerializer
+        return serializers.TemplateSerializer
+
+
+class ReportBlockViewSet(
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet
+):
+    queryset = ReportBlock.objects.all()
+    serializer_class = serializers.ReportBlockSerializer
+
+
+class ReportViewSet(
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet
+):
+    def get_queryset(self):
+        user = self.request.user
+        return Report.objects.filter(user=user)
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return serializers.CreateReportSerializer
+        return serializers.ReportSerializer
     
     @atomic
     def create(self, request, *args, **kwargs):
-        serializer = CreateReportSerializer(data=request.data, context={'request': request})
+        serializer = serializers.CreateReportSerializer(
+            data=request.data, context={'request': request}
+        )
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
 
         instance = serializer.instance
-        serializer = ReportSerializer(instance=instance)
+        serializer = serializers.ReportSerializer(instance=instance)
         headers = self.get_success_headers(serializer.data)
         return Response(
             serializer.data,

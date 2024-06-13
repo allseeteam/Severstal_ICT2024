@@ -3,6 +3,21 @@ from django.contrib import admin
 from . import models
 
 
+@admin.register(models.Theme)
+class ThemeAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(models.Template)
+class TemplateAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(models.MetaBlock)
+class MetaBlockAdmin(admin.ModelAdmin):
+    pass
+
+
 @admin.register(models.Data)
 class DataAdmin(admin.ModelAdmin):
     readonly_fields = ('page', 'file')

@@ -1,10 +1,8 @@
-# Titan Analytics UI
+# Пользовательский интерфейс
 
-U should have node & npm insatalled, then:
+Сначала надо установить зависимости с помощью команды `npm i` (предварительно надо установить npm версии 10.2.4 и node 21.5.0)
 
-First install dependencies - npm i
+После установки:
 
-After install:
-
-- To start dev server - npm run dev
-- To build prod version - npm run build
+- Для локальной разработки - `npm run dev`
+- Для продакшн сборки - `npm run build`

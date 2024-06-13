@@ -36,7 +36,7 @@ def get_table_fig(ent, first_n=20, width=600, height=800, **kwargs):
 
 def get_plot_fig(ent, x_col, y_cols, sort_by_x=True, first_n=20, width=600, height=800, is_plotly_obj=True, **kwargs):
     df = ent['frame']
-    title = ent['meta']
+    title = ent['meta']['title']
     if isinstance(df.columns[0], tuple):
         col_index_size = len(df.columns[0])
     else:
@@ -55,13 +55,13 @@ def get_plot_fig(ent, x_col, y_cols, sort_by_x=True, first_n=20, width=600, heig
             go.Scatter(
                 x=x,
                 y=df[y_col].values.tolist(),
-                name=y_col
+                name=str(y_col)
             )
             for y_col in y_cols
         ],
     )
-    if is_plotly_obj:
-        return {'x': x, 'y': y, 'title': ent['meta']}
+    if not is_plotly_obj:
+        return {'x': x, 'y': y, 'title': title, 'type': 'line'}
 
     fig.update_layout(
         title=title,
@@ -212,12 +212,17 @@ def get_line_chart_settings(entity):
 
 
 def get_pie_chart(entity, cat_col=None, float_col=None, is_plotly_obj=True, **kwargs):
-    title = entity['meta']
+    title = entity['meta']['title']
     if cat_col is None:
         return None
+    if isinstance(cat_col, tuple):
+        cat_col = list(cat_col)
 
     if float_col is None:
-        groupped = entity['frame'].groupby(cat_col)[cat_col].count()
+        try:
+            groupped = entity['frame'].groupby(cat_col)[cat_col].count()
+        except ValueError:
+            return None  # Какая-то ерунда с многоуровневыми индексами, починить если хватит времени
         values = groupped.values.tolist()
         names = groupped.index.tolist()
         fig = px.pie(groupped, values=groupped.values.tolist(),
@@ -227,8 +232,8 @@ def get_pie_chart(entity, cat_col=None, float_col=None, is_plotly_obj=True, **kw
         names = entity['frame'][cat_col].values.tolist()
         fig = px.pie(entity['frame'], values=float_col,
                      names=cat_col, title=title)
-    if is_plotly_obj:
-        return {'values': values, 'names': names, 'title': title}
+    if not is_plotly_obj:
+        return {'values': values, 'names': names, 'title': title, 'type': 'pie'}
     return fig
 
 
@@ -246,15 +251,17 @@ def get_all_possible_charts(entity):
 
 
 def get_one_figure_by_entity(entity, return_plotly_format=False):
+    # print(type(entity['frame']))
     line_chart_settings = get_line_chart_settings(entity)
     line_charts = [get_plot_fig(entity, is_plotly_obj=return_plotly_format, **settings)
                    for settings in line_chart_settings]
-    print(line_charts)
+    # print('line charts', len(line_charts))
     if line_charts:
         return line_charts[0]
     pie_chart_settings = get_pie_chart_settings(entity)
     pie_charts = [get_pie_chart(entity, is_plotly_obj=return_plotly_format, **settings)
                   for settings in pie_chart_settings]
+    # print('pie charts', len(pie_charts))
     if pie_charts:
         return pie_charts[0]
     return None

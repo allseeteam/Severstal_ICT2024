@@ -3,10 +3,12 @@ from io import StringIO
 import pandas as pd
 import json
 
+from extract.reports import get_one_figure_by_entity
 
-def hash_entity(entity):
+
+def hash_entity(df_as_json: str):
     # entity['meta'] = str(entity['meta'])
-    return hash(entity['frame'])
+    return hash(df_as_json)
     # return hash(frozenset(entity.items()))
 
 
@@ -15,21 +17,21 @@ def hash_df(df):
 
 
 def get_entity_id(entity):
-    if isinstance(entity['frame'], pd.DataFrame):
-        entity['frame'] = jsonify_df(entity['frame'])
-        entity_hash = hash_entity(entity)
-        entity['frame'] = pd.read_json(StringIO(entity['frame']))
-    elif isinstance(entity['frame'], dict):
-        df = pd.DataFrame(entity['frame'])
-        entity['frame'] = jsonify_df(df)
-        entity_hash = hash_entity(entity)
-        entity['frame'] = pd.read_json(StringIO(entity['frame']))
-    elif isinstance(entity['frame'], str):
-        entity['frame'] = json.loads(entity['frame'])
-        df = pd.DataFrame(entity['frame'])
-        entity['frame'] = jsonify_df(df)
-        entity_hash = hash_entity(entity)
-        entity['frame'] = pd.read_json(StringIO(entity['frame']))
+    df = entity['frame'].copy()
+    if isinstance(df, str):
+        df = json.loads(df)
+    if isinstance(df, dict):
+        df = pd.DataFrame(df)
+    # здесь уже должен быть дата фрейм точно, но на всякий оставляю заглушку
+    if isinstance(df, pd.DataFrame):
+        df.columns = range(len(df.columns))
+        # print(df)
+        # uniq_cols = df.columns.unique()
+        # print(df[uniq_cols])
+        df_as_json = jsonify_df(df)
+    else:
+        df_as_json = '1'
+    entity_hash = hash_entity(df_as_json)
     return f'{entity["url"]}@{entity_hash}'
 
 
@@ -158,7 +160,7 @@ def convert_to_float(x, ignore_error=False):
 
 
 def convert_to_datetime(x):
-    return pd.to_datetime(x)
+    return pd.to_datetime(x, dayfirst=False)
 
 
 def is_type(x, type):
@@ -179,5 +181,32 @@ def jsonify_df(df):
     return df.to_json()
 
 
+def htmlify_df(df):
+    return df.to_html()
+
+
 def dictify_df(df):
     return df.to_dict()
+
+
+def read_html(html_content):
+    return pd.read_html(html_content, index_col=0)[0]
+
+
+def read_json(content):
+    return pd.read_json(content)
+
+# read html with one table and convert to html
+# pd.read_html(entity['frame'].to_html(), index_col=0)[0]
+
+
+def is_valid_entity(entity):
+    # try:
+
+    result = get_one_figure_by_entity(entity)
+    print(result)
+    if result:
+        return True
+    # except Exception as e:
+    #     print(e)
+    return False

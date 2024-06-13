@@ -13,7 +13,8 @@ import requests
 from analyst.settings import BASE_DIR
 
 from extract.utils import get_entity_id
-from extract import prepary_entities, jsonify_df
+from extract import prepare_entities, jsonify_df, is_valid_entity, preprocess_entities, htmlify_df
+from tqdm import tqdm
 
 from . import models
 
@@ -59,7 +60,7 @@ class FedStatParser:
 class DataParser:
     @classmethod
     def page_content_to_data(cls, page: models.WebPage) -> List[models.Data]:
-        entities = prepary_entities(page.content, page.url)
+        entities = prepare_entities(page.content, page.url)
         objs = []
         for entity in entities:
             objs.append(
@@ -68,7 +69,7 @@ class DataParser:
                     type=models.Data.WEB_PAGE,
                     data_type=models.Data.DATA_TYPES,
                     page=page,
-                    data=jsonify_df(entity['frame']),
+                    data=htmlify_df(entity['frame']),
                     meta_data=entity['meta'],
                     date=datetime.today(),
                     version=0,
@@ -80,8 +81,16 @@ class DataParser:
     @classmethod
     def bulk_page_content_to_data(cls, pages: list[models.WebPage]) -> list[models.Data]:
         objs = []
-        for page in pages:
-            entities = prepary_entities(page.content, page.url)
+        print(f'To index {len(pages)} pages')
+        for page in tqdm(pages):
+            try:
+                entities = prepare_entities(page.content, page.url, return_dicts=False)
+                entities = preprocess_entities(entities)
+                print(f'len of entities before filter {len(entities)}')
+                entities = list(filter(lambda entity: is_valid_entity(entity), entities))
+                print(f'len of entities after filter {len(entities)}')
+            except TypeError:
+                continue
             for entity in entities:
                 objs.append(
                     models.Data(
@@ -89,12 +98,13 @@ class DataParser:
                         type=models.Data.WEB_PAGE,
                         data_type=models.Data.DATA_TYPES,
                         page=page,
-                        data=jsonify_df(entity['frame']),
+                        data=htmlify_df(entity['frame']),
                         meta_data=entity['meta'],
                         date=datetime.today(),
                         version=0,
                     )
                 )
+        print(f'Saving {len(objs)} objects')
         return models.Data.objects.bulk_create(objs=objs, ignore_conflicts=True)
 
     @classmethod

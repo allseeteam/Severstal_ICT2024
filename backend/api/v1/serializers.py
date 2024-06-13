@@ -18,7 +18,7 @@ except FileNotFoundError:
 
 class DataSearchSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField(read_only=True)
-    url  = serializers.SerializerMethodField(read_only=True)
+    url = serializers.SerializerMethodField(read_only=True)
     snippet = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
@@ -33,7 +33,7 @@ class DataSearchSerializer(serializers.ModelSerializer):
 
     def get_snippet(self, obj):
         return 'Пример сниппета'
-    
+
     def get_name(self, obj):
         return obj.name
 
@@ -57,6 +57,7 @@ class TemplateSerializer(serializers.ModelSerializer):
 
 class CreateTemplateSerializer(serializers.ModelSerializer):
     meta_blocks = MetaBlockSerializer(many=True)
+
     class Meta:
         model = Template
         fields = ('theme', 'name', 'meta_blocks')
@@ -132,17 +133,16 @@ class CreateReportSerializer(serializers.ModelSerializer):
                     data_obj = data[0]
             else:
                 data_obj = Data.objects.last()
-            
+
             block = ReportBlock(
                 report=report,
                 data=data_obj,
-                type='График', # Святу подумать
-                representation={}, # Тут надо Святу подумать, один блок на entity создаем?
+                type='График',  # Святу подумать
+                representation={},  # Тут надо Святу подумать, один блок на entity создаем?
                 position=meta_block.position,
                 readiness=ReportBlock.READY if data_obj else ReportBlock.NOT_READY
             )
             raw_blocks.append(block)
-            
 
             if not data_obj:
                 pass
@@ -153,7 +153,7 @@ class CreateReportSerializer(serializers.ModelSerializer):
         )
 
         return report
-    
+
 
 class ReportBlockSerializer(serializers.ModelSerializer):
     class Meta:
@@ -170,6 +170,7 @@ class ReportBlockSerializer(serializers.ModelSerializer):
 class ReportSerializer(serializers.ModelSerializer):
     search_query = serializers.StringRelatedField()
     blocks = ReportBlockSerializer(many=True)
+
     class Meta:
         model = Report
         fields = ('id', 'search_query', 'blocks', 'date')

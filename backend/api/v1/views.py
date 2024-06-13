@@ -27,8 +27,8 @@ class SearchView(viewsets.ViewSet):
         search_query = self.request.query_params.get('q')
         queryset = Data.objects.none()
         if search_query:
-            if serializer.search_engine:
-                result = serializer.search_engine.search(search_query)
+            if serializers.search_engine:
+                result = serializers.search_engine.search(search_query)
                 index_ids = list(map(lambda x: x[0], result))
                 queryset = Data.objects.filter(
                     index_id__in=index_ids

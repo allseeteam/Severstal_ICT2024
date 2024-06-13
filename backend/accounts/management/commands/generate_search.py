@@ -6,6 +6,7 @@ import pandas as pd
 from django.core.management.base import BaseCommand
 from django.forms.models import model_to_dict
 
+from extract import read_html
 from search import SearchEngine
 from accounts import models
 
@@ -25,8 +26,10 @@ class Command(BaseCommand):
         print(f'Read {len(entities)} entities')
         entities = [model_to_dict(r) for r in entities]
         for entity in entities:
-            entity['frame'] = pd.DataFrame(json.loads(entity['data']))
+            # print(entity['index_id'], entity['page'])
+            entity['frame'] = read_html(entity['data'])
             entity['meta'] = entity['meta_data']['title']
+            # break
         se = SearchEngine()
         se.bulk_index_entities(entities)
         print(f'Saving search engine to {output}')

@@ -14,7 +14,7 @@ class Command(BaseCommand):
         parser.add_argument('input', type=str, help='Input csv')
 
     def handle(self, input, *args, **options):
-        df = pd.read_csv(input)
+        df = pd.read_csv(input)  #.iloc[:500]
         print(f"Total: {len(df)}")
 
         urls = df['url'].values.tolist()

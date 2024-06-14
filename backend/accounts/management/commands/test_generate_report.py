@@ -13,13 +13,15 @@ class Command(BaseCommand):
         parser.add_argument('id', type=int)
 
     def handle(self, id, *args, **kwargs):
+        print(models.Data.objects.all()[0].id)
         data = models.Data.objects.filter(id=id).first()
         entity = model_to_dict(data)
         entity['frame'] = entity['data']
         entity['meta'] = entity['meta_data']  # ['title']
         entity = preprocess_entities([entity])[0]
         result = get_one_figure_by_entity(entity)
-        print(entity['frame'])
+        # print(entity['page'])
+        print(entity['frame'].iloc[:10].to_html())
         print(result)
         # print(data)
         # print()

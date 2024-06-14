@@ -14,9 +14,9 @@ def parse_tables_with_pdfplumber(path):
 def _parse_tables_pdfplumber(pdf):
     parsed_dfs = []
     for i, page in enumerate(tqdm.tqdm(pdf.pages)):
-        df = search_best_table(page)
+        df, text = search_best_table(page)
         if df is not None:
-            parsed_dfs.append({'page': i, 'df': df})
+            parsed_dfs.append({'page': i, 'df': df, 'text': text})
     return parsed_dfs
 
 
@@ -56,18 +56,22 @@ def get_df_from_page(page, settings):
 
 
 def search_best_table(page):
+    text = page.extract_text()
+    base_df = page.extract_table()
+    if base_df:
+        return pd.DataFrame(base_df), text
     dfs = []
     for variant in get_settings_variants():
         df = get_df_from_page(page, variant)
+
         if df is not None:
             # проверяем, стал ли отличаться датафрейм от предыдущего
             if len(dfs) == 0 or not df.equals(dfs[-1]):
                 dfs.append(df)
-
     # определяем, что лучший датафрейм - тот, где больше всего не-null значений
     # (наивная эвристика)
     best_df_idx = np.argmax(map(lambda x: x.shape[0] * x.shape[1], dfs))
     best_df = dfs[best_df_idx]
-    if get_float_values_ratio(best_df) > 0.1:
-        return best_df
+    if get_float_values_ratio(best_df) > 0:
+        return best_df, text
     return None

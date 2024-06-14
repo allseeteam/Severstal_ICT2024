@@ -14,6 +14,7 @@ from analyst.settings import BASE_DIR
 
 from extract.utils import get_entity_id
 from extract import prepare_entities, is_valid_entity, preprocess_entities, htmlify_df
+from extract.pdf import get_tables_from_raw_pdf
 from tqdm import tqdm
 
 from . import models
@@ -102,7 +103,8 @@ class DataParser:
         return models.Data.objects.bulk_create(objs=objs, ignore_conflicts=True, batch_size=700)
 
     @classmethod
-    def pdf_to_data(cls, content: str) -> List[models.Data]:
+    def pdf_to_data(cls, path: str) -> List[models.Data]:
+        tables = get_tables_from_raw_pdf(path)
         pass
 
     @classmethod

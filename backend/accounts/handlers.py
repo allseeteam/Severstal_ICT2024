@@ -93,10 +93,10 @@ class DataParser:
         objs = []
         print(f'To index {len(pages)} pages')
         for page in tqdm(pages):
-            objs.append(cls.page_content_to_data(page=page, save=False))
+            objs += cls.page_content_to_data(page=page, save=False)
 
         print(f'Saving {len(objs)} objects')
-        return models.Data.objects.bulk_create(objs=objs, ignore_conflicts=True)
+        return models.Data.objects.bulk_create(objs=objs, ignore_conflicts=True, batch_size=700)
 
     @classmethod
     def pdf_to_data(cls, content: str) -> List[models.Data]:

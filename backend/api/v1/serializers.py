@@ -1,12 +1,14 @@
 import pickle
-from typing import List
 from django.db.transaction import atomic
 from django.forms import model_to_dict
 from rest_framework import serializers
 
-from accounts.models import Data, MetaBlock, Report, ReportBlock, SearchQuery, Template, Theme
-from extract.reports import get_all_possible_charts, plot_entity, plotly_obj_to_json
-from extract.process_df import preprocess_entities
+from accounts.models import (
+    Data, MetaBlock, Report,
+    ReportBlock, SearchQuery, Template, Theme
+)
+from accounts.tasks import add_data_to_report_block
+from extract.reports import get_one_figure_by_entity
 
 
 search_engine = None
@@ -124,7 +126,9 @@ class CreateReportSerializer(serializers.ModelSerializer):
         for meta_block in template.meta_blocks.all():
             data_obj: Data | None
             if search_engine:
-                result = search_engine.search(search_query)
+                result = search_engine.search(
+                    f'{meta_block.query_template} {search_query}'
+                )
                 index_ids = list(map(lambda x: x[0], result))
                 data = Data.objects.filter(
                     index_id__in=index_ids
@@ -134,19 +138,28 @@ class CreateReportSerializer(serializers.ModelSerializer):
             else:
                 data_obj = Data.objects.last()
 
+            if data_obj:
+                entity = model_to_dict(data_obj)
+                entity['frame'] = entity['data']
+                entity['meta'] = entity['meta_data']['title']
+                representation=get_one_figure_by_entity(entity=entity)
+            else:
+                representation = {}
+
             block = ReportBlock(
                 report=report,
                 data=data_obj,
                 type='График',  # Святу подумать
-                representation={},  # Тут надо Святу подумать, один блок на entity создаем?
+                representation=representation, 
                 position=meta_block.position,
                 readiness=ReportBlock.READY if data_obj else ReportBlock.NOT_READY
             )
             raw_blocks.append(block)
 
             if not data_obj:
-                pass
-                # тут будем запускать таску на загрузку из поиска
+                add_data_to_report_block.apply_async(
+                    args=(block.id, meta_block.id)
+                )
 
         ReportBlock.objects.bulk_create(
             objs=raw_blocks

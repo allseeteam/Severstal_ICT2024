@@ -113,7 +113,7 @@ def is_datetime(x):
     if not can_be_converted:
         return False
     dt = convert_to_datetime(x)
-    if dt > datetime.today():
+    if dt.timestamp() > datetime.today().timestamp():
         return False
     return True
 

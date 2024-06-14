@@ -141,7 +141,7 @@ class ReportBlock(models.Model):
     )
     data = models.ForeignKey(
         'Data',
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,
         related_name='report_blocks',
         verbose_name='Данные',
         null=True

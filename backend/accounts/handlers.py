@@ -65,17 +65,18 @@ class DataParser:
         # yandexgpt-lite OR yandexgpt
         model_id = 'yandexgpt-lite'
         page = models.WebPage.objects.filter(url=url).first()
-        yagpt_response = ask_yagpt(make_prompt_by_html(page.content), YANDEX_SEARCH_API_TOKEN, model_id)
+        yagpt_response = ask_yagpt(make_prompt_by_html(
+            page.content), YANDEX_SEARCH_API_TOKEN, model_id)
         data = models.Data(
-                index_id=f'{url}@{hash(yagpt_response)}',
-                type=models.Data.WEB_PAGE,
-                data_type=models.Data.TEXT,
-                page=page,
-                data=yagpt_response,
-                meta_data={},
-                date=datetime.today(),
-                version=0,
-            )
+            index_id=f'{url}@{hash(yagpt_response)}',
+            type=models.Data.WEB_PAGE,
+            data_type=models.Data.TEXT,
+            page=page,
+            data=yagpt_response,
+            meta_data={},
+            date=datetime.today(),
+            version=0,
+        )
         data.save()
         return data
 
@@ -85,10 +86,12 @@ class DataParser:
             entities = prepare_entities(page.content, page.url)
             objs = []
             try:
-                entities = prepare_entities(page.content, page.url, return_dicts=False)
+                entities = prepare_entities(
+                    page.content, page.url, return_dicts=False)
                 entities = preprocess_entities(entities)
                 print(f'len of entities before filter {len(entities)}')
-                entities = list(filter(lambda entity: is_valid_entity(entity), entities))
+                entities = list(
+                    filter(lambda entity: is_valid_entity(entity), entities))
                 print(f'len of entities after filter {len(entities)}')
             except TypeError:
                 return []
@@ -128,7 +131,8 @@ class DataParser:
         try:
             entities = prepare_pdf_entities(entities, return_dicts=False)
             entities = preprocess_entities(entities)
-            entities = list(filter(lambda entity: is_valid_entity(entity), entities))
+            entities = list(
+                filter(lambda entity: is_valid_entity(entity), entities))
         except TypeError:
             return []
         objs = []
@@ -197,10 +201,10 @@ class SiteParser:
 
         if len(urls) == 0 and len(urls_to_files) == 0:
             return
-        
+
         now = timezone.now()
         web_pages: List[models.WebPage] = []
-        
+
         if download_files:
             for url in urls_to_files:
                 try:
@@ -271,6 +275,10 @@ class SiteParser:
             objs=web_pages, batch_size=700, ignore_conflicts=True
         )
 
+        models.Data.objects.bulk_create(
+            objs=data, batch_size=700, ignore_conflicts=True
+        )
+
         return data
 
     def parse_sites(self, start_urls: List[str]):
@@ -320,4 +328,3 @@ class SiteParser:
     def get_url_site(self, url: str) -> str:
         parsed_url = urlparse(url)
         return f'{parsed_url.scheme}://{parsed_url.netloc}/'
-

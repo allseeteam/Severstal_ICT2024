@@ -121,10 +121,8 @@ class CreateReportSerializer(serializers.ModelSerializer):
             search_query=search_query
         )
 
-        raw_blocks = []
-
         for meta_block in template.meta_blocks.all():
-            data_obj: Data | None
+            data_obj: Data | None = None
             if search_engine:
                 result = search_engine.search(
                     f'{meta_block.query_template} {search_query}'
@@ -135,8 +133,6 @@ class CreateReportSerializer(serializers.ModelSerializer):
                 )
                 if data.count() > 0:
                     data_obj = data[0]
-            else:
-                data_obj = Data.objects.last()
 
             if data_obj:
                 entity = model_to_dict(data_obj)
@@ -146,7 +142,7 @@ class CreateReportSerializer(serializers.ModelSerializer):
             else:
                 representation = {}
 
-            block = ReportBlock(
+            block = ReportBlock.objects.create(
                 report=report,
                 data=data_obj,
                 type='График',  # Святу подумать
@@ -154,16 +150,12 @@ class CreateReportSerializer(serializers.ModelSerializer):
                 position=meta_block.position,
                 readiness=ReportBlock.READY if data_obj else ReportBlock.NOT_READY
             )
-            raw_blocks.append(block)
 
             if not data_obj:
                 add_data_to_report_block.apply_async(
-                    args=(block.id, meta_block.id)
+                    args=(block.id, meta_block.id),
+                    countdown=15
                 )
-
-        ReportBlock.objects.bulk_create(
-            objs=raw_blocks
-        )
 
         return report
 

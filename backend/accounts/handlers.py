@@ -60,33 +60,36 @@ class FedStatParser:
 class DataParser:
     @classmethod
     def page_content_to_data(cls, page: models.WebPage, save: bool = True) -> List[models.Data]:
-        entities = prepare_entities(page.content, page.url)
-        objs = []
         try:
-            entities = prepare_entities(page.content, page.url, return_dicts=False)
-            entities = preprocess_entities(entities)
-            print(f'len of entities before filter {len(entities)}')
-            entities = list(filter(lambda entity: is_valid_entity(entity), entities))
-            print(f'len of entities after filter {len(entities)}')
-        except TypeError:
-            return []
-        for entity in entities:
-            objs.append(
-                models.Data(
-                    index_id=get_entity_id(entity),
-                    type=models.Data.WEB_PAGE,
-                    data_type=models.Data.DATA_TYPES,
-                    page=page,
-                    data=htmlify_df(entity['frame']),
-                    meta_data=entity['meta'],
-                    date=datetime.today(),
-                    version=0,
+            entities = prepare_entities(page.content, page.url)
+            objs = []
+            try:
+                entities = prepare_entities(page.content, page.url, return_dicts=False)
+                entities = preprocess_entities(entities)
+                print(f'len of entities before filter {len(entities)}')
+                entities = list(filter(lambda entity: is_valid_entity(entity), entities))
+                print(f'len of entities after filter {len(entities)}')
+            except TypeError:
+                return []
+            for entity in entities:
+                objs.append(
+                    models.Data(
+                        index_id=get_entity_id(entity),
+                        type=models.Data.WEB_PAGE,
+                        data_type=models.Data.DATA_TYPES,
+                        page=page,
+                        data=htmlify_df(entity['frame']),
+                        meta_data=entity['meta'],
+                        date=datetime.today(),
+                        version=0,
+                    )
                 )
-            )
 
-        if save:
-            return models.Data.objects.bulk_create(objs=objs, ignore_conflicts=True)
-        return objs
+            if save:
+                return models.Data.objects.bulk_create(objs=objs, ignore_conflicts=True)
+            return objs
+        except:
+            return []
 
     @classmethod
     def bulk_page_content_to_data(cls, pages: list[models.WebPage]) -> list[models.Data]:
@@ -131,9 +134,12 @@ class SiteParser:
             self.queues[site].put(url)
 
     def parse_pages(
-        self, urls: List[str], parse_page_urls: bool = False
+        self, urls: List[str],
+        parse_page_urls: bool = False,
+        download_files: bool = False,
     ) -> List[models.Data]:
         data: List[models.Data] = []
+        print(urls)
 
         urls_to_files: List[str] = [
             url
@@ -153,28 +159,31 @@ class SiteParser:
         now = timezone.now()
         web_pages: List[models.WebPage] = []
         
-        for url in urls_to_files:
-            try:
-                filename = url.split('/')[-1]
-                print(f'Файл: {filename}')
-                # Может дублироваться, но если сразу сохранять информациюв бд и не сохранять файл, то не страшно
-                with open(f'{BASE_DIR.parent}/data/{filename}', 'wb') as f:
-                    f.write(requests.get(url).content)
-                print(f'Скачан файл{filename}')
-                web_pages.append(
-                    models.WebPage(
-                        url=url,
-                        # content=content.page_content,
-                        update_date=now
+        if download_files:
+            for url in urls_to_files:
+                try:
+                    filename = url.split('/')[-1]
+                    print(f'Файл: {filename}')
+                    # Может дублироваться, но если сразу сохранять информациюв бд и не сохранять файл, то не страшно
+                    with open(f'{BASE_DIR.parent}/data/{filename}', 'wb') as f:
+                        f.write(requests.get(url).content)
+                    print(f'Скачан файл{filename}')
+                    web_pages.append(
+                        models.WebPage(
+                            url=url,
+                            # content=content.page_content,
+                            update_date=now
+                        )
                     )
-                )
-            except Exception as e:
-                print(f'Ошибка при сохранении {e}')
-                continue
+                except Exception as e:
+                    print(f'Ошибка при сохранении {e}')
+                    continue
 
         urls_content = AsyncChromiumLoader(urls).load()
         for url, content in zip(urls, urls_content):
+            print(url)
             if content.page_content.startswith('Error:'):
+                print('Error')
                 continue
 
             # исключаем страницы без ссылок, потому что
@@ -212,6 +221,8 @@ class SiteParser:
                 data += DataParser.page_content_to_data(
                     page
                 )
+            else:
+                data += list(models.WebPage.objects.get(url=url).data.all())
 
         # Пока механизм обновления уже скаченных не предусмотрен
         models.WebPage.objects.bulk_create(

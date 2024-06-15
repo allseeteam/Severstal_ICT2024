@@ -138,14 +138,14 @@ class CreateReportSerializer(serializers.ModelSerializer):
                 entity = model_to_dict(data_obj)
                 entity['frame'] = entity['data']
                 entity['meta'] = entity['meta_data']['title']
-                representation=get_one_figure_by_entity(entity=entity)
+                representation = get_one_figure_by_entity(entity=entity)
             else:
                 representation = {}
 
             block = ReportBlock.objects.create(
                 report=report,
                 data=data_obj,
-                type='График',  # Святу подумать
+                type='plotly',  # Святу подумать. UPD от Свята: тут надо получать с фронта. Либо plotly, либо text
                 representation=representation, 
                 position=meta_block.position,
                 readiness=ReportBlock.READY if data_obj else ReportBlock.NOT_READY

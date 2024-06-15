@@ -128,3 +128,8 @@ html5lib
 # chatgpt-proxy
 kaleido==0.2.1
 xhtml2pdf==0.2.16
+python-docx==1.1.2
+xlsxwriter==3.2.0
+openpyxl==3.1.3
+# gh-md-to-html==1.21.2
+markdown==3.6

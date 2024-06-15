@@ -18,15 +18,15 @@ const Header = () => {
       <div className="hidden md:block">
         <div className="container flex h-16 items-center max-w-[88rem] mx-auto">
           <div className="mr-4 hidden md:flex">
-            <a
+            <Link
               className="flex items-center justify-center space-x-2 text-2xl py-6 text-center transition-colors text-foreground mr-10"
-              href="/"
+              to="/"
             >
               <FilePieChart size={26} />
               <div className="flex flex-col">
                 <h1 className="text-lg text-left font-semibold">ТА-Сервис</h1>
               </div>
-            </a>
+            </Link>
           </div>
           <a
             className="inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:text-accent-foreground h-9 py-2 mr-2 px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 md:hidden"
@@ -49,12 +49,12 @@ const Header = () => {
                 new
               </span>
             </Link>
-            <Link
+            {/* <Link
               className="transition-colors hover:text-foreground hover:underline text-foreground/80 hidden sm:flex space-x-1"
-              to="/templates"
+              to="/sources"
             >
-              Шаблоны
-            </Link>
+              Источники
+            </Link> */}
             <Link
               className="transition-colors hover:text-foreground hover:underline text-foreground/80 hidden sm:flex space-x-1"
               to="/generate"

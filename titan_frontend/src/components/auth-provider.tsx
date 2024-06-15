@@ -1,7 +1,9 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { fakeAuthProvider } from '../services/auth';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AuthParams } from '@/api/auth';
+import { useToast } from './ui/use-toast';
+import { useLocalStorage } from 'usehooks-ts';
 
 interface AuthContextType {
   user: AuthParams;
@@ -13,17 +15,48 @@ const AuthContext = createContext<AuthContextType>(null!);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthParams | null>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { toast } = useToast();
+  const [tokenValue, setTokenValue, removeTokenValue] = useLocalStorage(
+    'test-auth',
+    ''
+  );
+
+  useEffect(() => {
+    console.log({ tokenValue });
+    if (tokenValue) {
+      setUser({
+        username: 'test',
+        password: '123',
+      });
+      console.log({ location });
+      navigate(location.state?.from?.pathname ?? location.pathname);
+    }
+  }, [tokenValue]);
 
   const signin = (newUser: AuthParams) => {
-    return fakeAuthProvider.signin(newUser, () => {
-      setUser(newUser);
-      console.log('successfully signin');
-    });
+    return fakeAuthProvider.signin(
+      newUser,
+      (token: string) => {
+        setUser(newUser);
+        setTokenValue(token);
+        console.log('successfully signin');
+      },
+      (error: any) => {
+        toast({
+          title: 'Login error',
+          description: error,
+          variant: 'destructive',
+        });
+      }
+    );
   };
 
   const signout = () => {
     return fakeAuthProvider.signout(() => {
       setUser(null);
+      removeTokenValue();
     });
   };
 

@@ -12,6 +12,8 @@ import {
   sortingFns,
   useReactTable,
 } from '@tanstack/react-table';
+import { getReportsApi } from '@/api/report';
+import { useQuery } from '@tanstack/react-query';
 
 // A TanStack fork of Kent C. Dodds' match-sorter library that provides ranking information
 import {
@@ -26,9 +28,14 @@ import {
   useEffect,
   InputHTMLAttributes,
 } from 'react';
-import { Person, makeData } from '../services/reports';
-import { LucideSearch } from 'lucide-react';
+import {
+  LucideArrowLeftCircle,
+  LucideArrowRightCircle,
+  LucideSearch,
+} from 'lucide-react';
 import { Input } from './ui/input';
+import { IconFidgetSpinner } from '@tabler/icons-react';
+import { Link } from 'react-router-dom';
 
 declare module '@tanstack/react-table' {
   //add fuzzy filter to the filterFns
@@ -71,44 +78,70 @@ const fuzzySort: SortingFn<any> = (rowA, rowB, columnId) => {
 };
 
 export function ReportsTable() {
+  const [page, setPage] = useState(1);
+  const { data: reportsData, isLoading: reportsDataLoading } = useQuery({
+    queryKey: ['reports', page],
+    queryFn: async () => {
+      return getReportsApi({ page });
+    },
+  });
+
   const rerender = useReducer(() => ({}), {})[1];
 
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
 
-  const columns = useMemo<ColumnDef<Person, any>[]>(
+  const columns = useMemo<ColumnDef<any, any>[]>(
     () => [
       {
         accessorKey: 'id',
+        header: () => <span>#</span>,
         filterFn: 'equalsString', //note: normal non-fuzzy filter column - exact match required
       },
       {
-        accessorKey: 'firstName',
+        accessorKey: 'search_query',
+        header: () => <span>Запрос</span>,
         cell: (info) => info.getValue(),
-        filterFn: 'includesStringSensitive', //note: normal non-fuzzy filter column
+        filterFn: 'fuzzy', //note: normal non-fuzzy filter column
+        sortingFn: fuzzySort, //sort by fuzzy rank (falls back to alphanumeric)
       },
       {
-        accessorFn: (row) => row.lastName, //note: normal non-fuzzy filter column - case sensitive
-        id: 'lastName',
-        cell: (info) => info.getValue(),
-        header: () => <span>Last Name</span>,
-        filterFn: 'includesString', //note: normal non-fuzzy filter column - case insensitive
+        accessorKey: 'date',
+        header: () => <span>Дата</span>,
+        cell: (info) =>
+          new Intl.DateTimeFormat('ru-RU').format(new Date(info.getValue())),
+        filterFn: 'fuzzy', //note: normal non-fuzzy filter column
+        sortingFn: fuzzySort, //sort by fuzzy rank (falls back to alphanumeric)
       },
       {
-        accessorFn: (row) => `${row.firstName} ${row.lastName}`,
-        id: 'fullName',
-        header: 'Full Name',
-        cell: (info) => info.getValue(),
-        filterFn: 'fuzzy', //using our custom fuzzy filter function
-        // filterFn: fuzzyFilter, //or just define with the function
+        accessorKey: 'status',
+        header: () => <span>Статус</span>,
+        cell: (info) => {
+          console.log({ info });
+          const isReady =
+            (
+              info.row?.original?.blocks?.filter(
+                (v) => v?.readiness === 'ready'
+              ) || []
+            ).length > 0;
+          return <div>{isReady ? 'Готов' : 'В процессе'}</div>;
+        },
+        filterFn: 'fuzzy', //note: normal non-fuzzy filter column
         sortingFn: fuzzySort, //sort by fuzzy rank (falls back to alphanumeric)
       },
     ],
     []
   );
 
-  const [data, setData] = useState<Person[]>(() => makeData(5_000));
-  const refreshData = () => setData((_old) => makeData(50_000)); //stress test
+  const [data, setData] = useState<any[]>([]);
+
+  console.log({ data });
+
+  useEffect(() => {
+    if (reportsData?.results?.length) {
+      setData(reportsData.results);
+    }
+  }, [reportsData]);
 
   const table = useReactTable({
     data,
@@ -141,15 +174,22 @@ export function ReportsTable() {
     }
   }, [table.getState().columnFilters[0]?.id]);
 
+  if (reportsDataLoading) {
+    return (
+      <div>
+        <IconFidgetSpinner className=" animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="p-2 my-8 shadow-sm border rounded-lg overflow-x-auto bg-gray-50">
       <div className="flex items-center justify-between">
-        <div className="">Тут еще всякие быстрые фильтры</div>
-        <div className="flex justify-end py-2">
+        <div className="flex justify-end py-2 w-[360px]">
           <DebouncedInput
             value={globalFilter ?? ''}
             onChange={(value) => setGlobalFilter(String(value))}
-            className=" font-lg shadow border border-block"
+            className="font-lg shadow border border-block"
             placeholder="Поиск по всем параметрам..."
           />
         </div>
@@ -197,17 +237,25 @@ export function ReportsTable() {
           <tbody className="text-gray-600 divide-y">
             {table.getRowModel().rows.map((row) => {
               return (
-                <tr key={row.id}>
-                  {row.getVisibleCells().map((cell) => {
-                    return (
-                      <td key={cell.id} className="px-6 py-4 whitespace-nowrap">
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </td>
-                    );
-                  })}
+                <tr key={row.id} className="hover:bg-gray-400/10">
+                  <Link
+                    to={`/reports/${row.original?.id}`}
+                    className="contents hover:bg-black"
+                  >
+                    {row.getVisibleCells().map((cell) => {
+                      return (
+                        <td
+                          key={cell.id}
+                          className="px-6 py-4 whitespace-nowrap"
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </td>
+                      );
+                    })}
+                  </Link>
                 </tr>
               );
             })}
@@ -217,64 +265,35 @@ export function ReportsTable() {
       <div className="h-2" />
       <div className="flex items-center gap-2">
         <button
-          className="border rounded p-1"
-          onClick={() => table.setPageIndex(0)}
-          disabled={!table.getCanPreviousPage()}
+          className="border rounded p-1 disabled:text-gray-300 text-gray-700"
+          onClick={() => {
+            // table.previousPage();
+            if (reportsData.previous) {
+              setPage((page) => page - 1);
+            }
+          }}
+          disabled={!reportsData.previous}
         >
-          {'<<'}
+          <LucideArrowLeftCircle />
         </button>
         <button
-          className="border rounded p-1"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
+          className="border rounded p-1 disabled:text-gray-300 text-gray-700"
+          onClick={() => {
+            // table.nextPage();
+            if (reportsData.next) {
+              setPage((page) => page + 1);
+            }
+          }}
+          disabled={!reportsData.next}
         >
-          {'<'}
-        </button>
-        <button
-          className="border rounded p-1"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
-          {'>'}
-        </button>
-        <button
-          className="border rounded p-1"
-          onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-          disabled={!table.getCanNextPage()}
-        >
-          {'>>'}
+          <LucideArrowRightCircle />
         </button>
         <span className="flex items-center gap-1">
-          <div>Page</div>
+          <div>Страница</div>
           <strong>
-            {table.getState().pagination.pageIndex + 1} of{' '}
-            {table.getPageCount()}
+            {page} из {Math.ceil(reportsData?.count / 10)}
           </strong>
         </span>
-        <span className="flex items-center gap-1">
-          | Go to page:
-          <input
-            type="number"
-            defaultValue={table.getState().pagination.pageIndex + 1}
-            onChange={(e) => {
-              const page = e.target.value ? Number(e.target.value) - 1 : 0;
-              table.setPageIndex(page);
-            }}
-            className="border p-1 rounded w-16"
-          />
-        </span>
-        <select
-          value={table.getState().pagination.pageSize}
-          onChange={(e) => {
-            table.setPageSize(Number(e.target.value));
-          }}
-        >
-          {[10, 20, 30, 40, 50].map((pageSize) => (
-            <option key={pageSize} value={pageSize}>
-              Show {pageSize}
-            </option>
-          ))}
-        </select>
       </div>
     </div>
   );
@@ -325,7 +344,7 @@ export function DebouncedInput({
         {...props}
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        className="sm:flex w-full relative hidden justify-start items-center text-sm text-muted-foreground py-2 outline-none border border-transparent shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),0px_1px_0px_0px_rgba(25,28,33,0.02),0px_0px_0px_1px_rgba(25,28,33,0.08)] px-8 rounded-xl bg-white"
+        className="px-8"
       />
       <LucideSearch
         className="absolute left-2 top-1/2 z-10 -translate-y-1/2"

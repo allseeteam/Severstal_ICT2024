@@ -8,6 +8,7 @@ import ReportsCreatePage from './reports/reports-create';
 import SupportPage from './support/support';
 import ReportPreviewPage from './reports/report-preview';
 import PreferencesPage from './user/preferences';
+import { Toaster } from '@/components/ui/toaster';
 
 export default function Root() {
   return (
@@ -61,6 +62,7 @@ export default function Root() {
           </Route>
         </Routes>
       </AuthProvider>
+      <Toaster />
     </div>
   );
 }

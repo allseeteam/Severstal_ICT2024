@@ -56,11 +56,11 @@ def process_block(report_block_id: int, meta_block_id: int):
                 break
             print(entity)
             entity['frame'] = entity['data']
+
             entity['meta'] = entity['meta_data'].get('title', '')
 
             entity = preprocess_entity(entity)
             representation = get_one_figure_by_entity(entity=entity, return_plotly_format=True)
-            print(representation)
             representation = representation.to_dict()
 
             report_block.data = data_obj

@@ -43,7 +43,6 @@ def process_block(report_block_id: int, meta_block_id: int):
         else:
             report_block.readiness = models.ReportBlock.ERROR
             return
-    # print(data)
     report_block.readiness = models.ReportBlock.ERROR
     for data_obj in data:
         try:

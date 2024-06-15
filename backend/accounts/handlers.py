@@ -62,8 +62,10 @@ class FedStatParser:
 class DataParser:
     @classmethod
     def summarize_url(cls, url: str):
+        # yandexgpt-lite OR yandexgpt
+        model_id = 'yandexgpt-lite'
         page = models.WebPage.objects.filter(url=url).first()
-        yagpt_response = ask_yagpt(make_prompt_by_html(page.content), YANDEX_SEARCH_API_TOKEN)
+        yagpt_response = ask_yagpt(make_prompt_by_html(page.content), YANDEX_SEARCH_API_TOKEN, model_id)
         data = models.Data(
                 index_id=f'{url}@{hash(yagpt_response)}',
                 type=models.Data.WEB_PAGE,

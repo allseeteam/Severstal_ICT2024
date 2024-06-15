@@ -155,7 +155,7 @@ class Report(models.Model):
         verbose_name_plural = 'Аналитические отчеты'
 
     def get_pdf(self):
-        blocks = ReportBlock.objects.filter(report_id=self.id).all()
+        blocks = self.blocks.filter(readiness=ReportBlock.READY)
         if not blocks:
             return
         new_blocks, tables = preprocess_blocks(blocks)
@@ -166,7 +166,7 @@ class Report(models.Model):
         return content
 
     def get_word(self):
-        blocks = ReportBlock.objects.filter(report_id=self.id).all()
+        blocks = self.blocks.filter(readiness=ReportBlock.READY)
         if not blocks:
             return
         new_blocks, tables = preprocess_blocks(blocks)
@@ -177,7 +177,7 @@ class Report(models.Model):
         return content
 
     def get_excel(self):
-        blocks = ReportBlock.objects.filter(report_id=self.id).all()
+        blocks = self.blocks.filter(readiness=ReportBlock.READY)
         if not blocks:
             return
         new_blocks, tables = preprocess_blocks(blocks)

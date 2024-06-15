@@ -226,3 +226,16 @@ class ReportSerializer(ReportLightSerializer):
             many=True
         ).data
 
+
+class ReportFileFormatSerializer(serializers.ModelSerializer):
+    type = serializers.ChoiceField(
+        choices=(
+            ('pdf', 'pdf'),
+            ('msword', 'word'),
+            ('vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'excel')
+        )
+    )
+
+    class Meta:
+        model = Report
+        fields = ('type',)

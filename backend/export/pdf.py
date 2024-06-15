@@ -1,6 +1,8 @@
 from xhtml2pdf import pisa
 from io import StringIO
 
+from analyst.settings import BASE_DIR
+
 
 def save_pdf_report(blocks: dict, output_path):
     static_report = ''
@@ -17,7 +19,7 @@ def save_pdf_report(blocks: dict, output_path):
 
 
 def convert_html_to_pdf(source_html, output_filename):
-    path_to_helvetica = 'helvetica.ttf'
+    path_to_helvetica = f'{BASE_DIR}/helvetica.ttf'
     print(path_to_helvetica)
     source_html = """
     <html>

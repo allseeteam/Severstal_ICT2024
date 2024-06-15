@@ -136,6 +136,8 @@ class ReportViewSet(
             return serializers.CreateReportSerializer
         if self.action == 'list':
             return serializers.ReportLightSerializer
+        if self.action == 'download_report':
+            return serializers.ReportFileFormatSerializer
         return serializers.ReportSerializer
     
     @atomic
@@ -155,29 +157,29 @@ class ReportViewSet(
             status=status.HTTP_201_CREATED,
             headers=headers
         )
-
+    
     @decorators.action(
-        methods=('get',),
+        methods=('post',),
         detail=True,
         url_name='download_report'
     )
     def download_report(self, request, *args, **kwargs):
         instance = self.get_object()
 
-        report_type = request.GET.get('type', 'pdf')
-
+        serializer = serializers.ReportFileFormatSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        report_type = serializer.data.get('type')
+        
         if report_type == 'pdf':
             file = instance.get_pdf()
-        elif report_type == 'word':
+        elif report_type == 'msword':
             file = instance.get_word()
-        elif report_type == 'excel':
+        elif report_type == 'vnd.openxmlformats-officedocument.spreadsheetml.sheet':
             file = instance.get_excel()
-        else:
-            return HttpResponseBadRequest(f'No such report {report_type}. Use `pdf`, `word` or `excel`')
 
         return HttpResponse(
             file,
-            content_type='application/pdf',
+            content_type=f'application/{report_type}',
             headers={'Content-Disposition': f'attachment; filename={file.name}'}
         ) 
 

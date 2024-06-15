@@ -89,9 +89,11 @@ class Template(models.Model):
 class MetaBlock(models.Model):
     PLOTLY = 'plotly'
     TEXT = 'text'
+    VIDEO = 'video'
     TYPES = (
         (PLOTLY, 'Plotly'),
-        (TEXT, 'Текст')
+        (TEXT, 'Текст'),
+        (VIDEO, 'Видео'),
     )
 
     query_template = models.CharField(

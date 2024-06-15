@@ -6,16 +6,16 @@ from search.text import normalize_string
 def make_prompt_by_html(html_content: str):
     root = BeautifulSoup(html_content)
     text = normalize_string(root.text)
-    prompt = f"""Представь, что ты ассистент продуктового аналитика. Я передам тебе текст с аналитического сайта, напиши краткую выжимку. Если в данных есть таблицы, выведи их. Данные:
+    prompt = f"""Представь, что ты ассистент продуктового аналитика. Я передам тебе текст с аналитического сайта, напиши краткий отчет от 3 до 5 пунктов. Данные:
     {text}
     """
     return prompt
 
 
-def make_req_data(query):
+def make_req_data(query, model_id):
     folderid = 'b1gjpg4fsjcau2oceikv'
-    model = 'yandexgpt'
-    uri = f'gpt://{folderid}/{model}/latest'
+    # model_id = 'yandexgpt'
+    uri = f'gpt://{folderid}/{model_id}/latest'
     return {
         "modelUri": uri,
         "completionOptions": {
@@ -32,7 +32,7 @@ def make_req_data(query):
     }
 
 
-def ask_yagpt(query, api_key):
+def ask_yagpt(query, api_key, model_id):
     url = 'https://llm.api.cloud.yandex.net/foundationModels/v1/completion'
     folderid = 'b1gjpg4fsjcau2oceikv'
     headers = {
@@ -40,7 +40,7 @@ def ask_yagpt(query, api_key):
         'Authorization': f'Api-Key {api_key}',
         'x-folder-id': folderid
     }
-    data = make_req_data(query)
+    data = make_req_data(query, model_id)
     response = requests.post(url, headers=headers, json=data)
     if response.status_code != 200:
         raise ValueError(

@@ -141,7 +141,10 @@ def convert_column_type(df_col):
     try:
         col_type = argmax(type_distr.items())
         col_new_type = df_col.apply(convert_func_dict[col_type])
-        return col_new_type, col_type, col_new_type.nunique()
+        n_unique = col_new_type.nunique()
+        if not isinstance(n_unique, int):
+            n_unique = n_unique.values[0]
+        return col_new_type, col_type, n_unique
     except ValueError:
         pass
     if not isinstance(df_col.nunique(), int):

@@ -218,10 +218,12 @@ class Data(models.Model):
 
     SERIES = 'series'
     REFERENCE = 'reference'
+    TEXT = 'text'
 
     DATA_TYPES = (
         (SERIES, 'Временной ряд'),
-        (REFERENCE, 'Справочник')
+        (REFERENCE, 'Справочник'),
+        (TEXT, 'Текст')
     )
 
     index_id = models.CharField(

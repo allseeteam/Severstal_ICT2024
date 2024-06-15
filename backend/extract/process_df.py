@@ -2,8 +2,9 @@ import pandas as pd
 from collections import Counter
 
 from tqdm import tqdm
+from search.text import normalize_string_repr
 from extract.html import get_tables_from_raw_html
-from extract.utils import calc_type_distribution, convert_to_datetime, convert_to_float
+from extract.utils import calc_type_distribution, convert_to_datetime, convert_to_float, read_html
 
 
 def get_entities_from_html_df(df):
@@ -35,7 +36,7 @@ def filter_entities(entities, float_threshold=0.5, datetime_threshold=0.5):
 
 def deduplicate_entities(tables):
     deduplicated = []
-    for i in tqdm(range(len(tables))):
+    for i in range(len(tables)):
         is_duplicate = False
         for j in range(len(deduplicated)):
             if tables[i]['frame'].equals(deduplicated[j]['frame']):
@@ -135,13 +136,16 @@ def convert_column_type(df_col):
         'float': lambda x: convert_to_float(x, ignore_error=True),
         'datetime': convert_to_datetime,
         'na': lambda x: None,
-        'str': str
+        'str': normalize_string_repr,
     }
 
     try:
         col_type = argmax(type_distr.items())
         col_new_type = df_col.apply(convert_func_dict[col_type])
-        return col_new_type, col_type, col_new_type.nunique()
+        n_unique = col_new_type.nunique()
+        if not isinstance(n_unique, int):
+            n_unique = n_unique.values[0]
+        return col_new_type, col_type, n_unique
     except ValueError:
         pass
     if not isinstance(df_col.nunique(), int):
@@ -161,7 +165,8 @@ def is_categorical(series, unique_values, col_type):
                 return False
         except ValueError:
             pass
-    threshold = max(len(series) * 0.1, 5)  # минимум - 5 значений, чтобы была категория
+    # минимум - 5 значений, чтобы была категория
+    threshold = max(len(series) * 0.1, 5)
     if unique_values <= threshold and unique_values != len(series):
         return True
     return False
@@ -187,6 +192,7 @@ def convert_each_column_df(df):
             is_monotonic = all(df.loc[:, col].diff().dropna() == 1)
             if is_monotonic:
                 col_type = 'index'
+
         col_types[col] = col_type
         col_unique_values[col] = unique_values
 
@@ -196,16 +202,29 @@ def convert_each_column_df(df):
     return df, col_by_types, col_unique_values
 
 
+def preprocess_entity(entity):
+    df = entity['frame']
+    if isinstance(df, str):
+        df = read_html(df)
+        # df = pd.read_json(df)
+    elif isinstance(df, dict):
+        df = pd.DataFrame(df)
+    elif isinstance(df, pd.DataFrame):
+        pass
+    else:
+        raise ValueError(f"Unknown type of df {type(df)}")
+    df = replace_df_values(df)
+    df = find_header(df)
+    df = replace_df_values(df)
+    df, col_types, col_unique_values = convert_each_column_df(df)
+    entity['frame'] = df
+    entity['col_types'] = col_types
+    entity['col_unique_values'] = col_unique_values
+    return entity
+
+
 def preprocess_entities(entities):
+    new_entities = []
     for entity in entities:
-        df = entity['frame']
-        if not isinstance(df, pd.DataFrame):
-            df = pd.read_json(df)
-        df = replace_df_values(df)
-        df = find_header(df)
-        df = replace_df_values(df)
-        df, col_types, col_unique_values = convert_each_column_df(df)
-        entity['frame'] = df
-        entity['col_types'] = col_types
-        entity['col_unique_values'] = col_unique_values
-    return entities
+        new_entities.append(preprocess_entity(entity))
+    return new_entities

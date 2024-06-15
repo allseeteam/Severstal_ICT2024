@@ -21,6 +21,14 @@ services:
       - .env
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+  # chatgpt-proxy:
+  #   container_name: chatgpt
+  #   image: pawanosman/chatgpt:latest
+  #   restart: on-failure
+  #   ports:
+  #     - 3040:3040
+  #   env_file:
+  #     - .env
 
 volumes:
   postgres_data:

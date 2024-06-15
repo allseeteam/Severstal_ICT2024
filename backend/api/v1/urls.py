@@ -9,10 +9,12 @@ from rest_framework.routers import DefaultRouter
 from . import views
 
 
-
 v1_router = DefaultRouter()
 v1_router.register('search', views.SearchView, basename='search')
 v1_router.register('report', views.ReportViewSet, basename='report')
+v1_router.register('theme', views.ThemeViewSet, basename='theme')
+v1_router.register('template', views.TemplateViewSet, basename='template')
+v1_router.register('report_block', views.ReportBlockViewSet, basename='report_block')
 
 urlpatterns = [
     path('auth/', obtain_auth_token, name='auth'),

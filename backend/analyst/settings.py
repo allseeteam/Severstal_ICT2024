@@ -121,6 +121,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # DRF
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.TokenAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
@@ -145,3 +146,7 @@ CELERY_TIMEZONE = TIME_ZONE
 # Для разработки фронта
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+
+# Yandex Search API
+
+YANDEX_SEARCH_API_TOKEN = os.getenv('YANDEX_SEARCH_API_TOKEN', None)

@@ -5,4 +5,4 @@ from .start_urls import START_URLS
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        SiteParser(start_urls=START_URLS).parse()
+        SiteParser().parse_sites(start_urls=START_URLS)

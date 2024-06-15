@@ -1,4 +1,20 @@
+import io
+
+from django.core.files.base import ContentFile
 from django.db import models
+from export import preprocess_blocks, save_pdf_report, save_excel_report, save_word_report
+
+class Site(models.Model):
+    domain = models.CharField(
+        'Домен'
+    )
+
+    class Meta:
+        verbose_name = 'Проверенный сайт'
+        verbose_name_plural = 'Проверенные сайты'
+
+    def __str__(self) -> str:
+        return self.domain
 
 
 class SearchQuery(models.Model):
@@ -35,7 +51,73 @@ class SearchQuery(models.Model):
 
     def __str__(self) -> str:
         return f'Пользовательский запрос: {self.text}'
-    
+
+
+class Theme(models.Model):
+    name = models.CharField(
+        'Название'
+    )
+
+    class Meta:
+        verbose_name = 'Тематика отчета'
+        verbose_name_plural = 'Тематики отчетов'
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class Template(models.Model):
+    name = models.CharField(
+        'Название'
+    )
+    theme = models.ForeignKey(
+        'Theme',
+        on_delete=models.SET_NULL,
+        related_name='templates',
+        verbose_name='Тематика отчета',
+        null=True
+    )
+
+    class Meta:
+        verbose_name = 'Шаблон отчета'
+        verbose_name_plural = 'Шаблоны отчетов'
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class MetaBlock(models.Model):
+    PLOTLY = 'plotly'
+    TEXT = 'text'
+    TYPES = (
+        (PLOTLY, 'Plotly'),
+        (TEXT, 'Текст')
+    )
+
+    query_template = models.CharField(
+        'Шаблон запроса'
+    )
+    template = models.ForeignKey(
+        'Template',
+        on_delete=models.CASCADE,
+        related_name='meta_blocks',
+        verbose_name='Шаблон отчета'
+    )
+    type = models.CharField(
+        'Тип',
+        choices=TYPES
+    )
+    position = models.PositiveIntegerField(
+        'Позиция'
+    )
+
+    class Meta:
+        verbose_name = 'Мета-блок отчета'
+        verbose_name_plural = 'Мета-блоки отчетов'
+
+    def __str__(self) -> str:
+        return self.query_template
+
 
 class Report(models.Model):
     user = models.ForeignKey(
@@ -52,6 +134,12 @@ class Report(models.Model):
         verbose_name='Поисковый запрос',
         null=True
     )
+    template = models.ForeignKey(
+        'Template',
+        on_delete=models.SET_NULL,
+        verbose_name='Шаблон',
+        null=True
+    )
     date = models.DateTimeField(
         auto_now_add=True
     )
@@ -66,8 +154,56 @@ class Report(models.Model):
         verbose_name = 'Аналитический отчет'
         verbose_name_plural = 'Аналитические отчеты'
 
+    def get_pdf(self):
+        blocks = ReportBlock.objects.filter(report_id=self.id).all()
+        if not blocks:
+            return
+        new_blocks, tables = preprocess_blocks(blocks)
+        filename = f'report_{self.pk}.pdf'
+        save_pdf_report(new_blocks, filename)
+        with open(filename, 'rb') as f:
+            content = ContentFile(f.read())
+        return content
+
+    def get_word(self):
+        blocks = ReportBlock.objects.filter(report_id=self.id).all()
+        if not blocks:
+            return
+        new_blocks, tables = preprocess_blocks(blocks)
+        filename = f'report_{self.pk}.docx'
+        save_word_report(new_blocks, filename)
+        with open(filename, 'rb') as f:
+            content = ContentFile(f.read())
+        return content
+
+    def get_excel(self):
+        blocks = ReportBlock.objects.filter(report_id=self.id).all()
+        if not blocks:
+            return
+        new_blocks, tables = preprocess_blocks(blocks)
+        filename = f'report_{self.pk}.xlsx'
+        save_excel_report(tables, filename)
+        with open(filename, 'rb') as f:
+            content = ContentFile(f.read())
+        return content
 
 class ReportBlock(models.Model):
+    READY = 'ready'
+    NOT_READY = 'not_ready'
+    ERROR = 'error'
+    READINESS_STATUSES = (
+        (READY, 'Готов'),
+        (NOT_READY, 'Не готов'),
+        (ERROR, 'Ошибка')
+    )
+
+    PLOTLY = 'plotly'
+    TEXT = 'text'
+    TYPES = (
+        (PLOTLY, 'Plotly'),
+        (TEXT, 'Текст')
+    )
+
     report = models.ForeignKey(
         'Report',
         on_delete=models.CASCADE,
@@ -76,11 +212,28 @@ class ReportBlock(models.Model):
     )
     data = models.ForeignKey(
         'Data',
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,
         related_name='report_blocks',
         verbose_name='Данные',
+        null=True
     )
     representation = models.JSONField('Представление')
+    type = models.CharField(
+        'Тип',
+        choices=TYPES
+    )
+    comment = models.TextField(
+        'Комментарий',
+        blank=True
+    )
+    summary = models.TextField(
+        'Вывод LLM',
+        blank=True
+    )
+    readiness = models.CharField(
+        'Готовность',
+        choices=READINESS_STATUSES
+    )
     position = models.PositiveIntegerField(
         'Позиция'
     )
@@ -99,10 +252,12 @@ class Data(models.Model):
 
     SERIES = 'series'
     REFERENCE = 'reference'
+    TEXT = 'text'
 
     DATA_TYPES = (
         (SERIES, 'Временной ряд'),
-        (REFERENCE, 'Справочник')
+        (REFERENCE, 'Справочник'),
+        (TEXT, 'Текст')
     )
 
     index_id = models.CharField(
@@ -111,7 +266,6 @@ class Data(models.Model):
     type = models.CharField(
         'Тип источника данных',
         choices=SOURCE_TYPES,
-        # max_length=16
     )
     page = models.ForeignKey(
         'WebPage',
@@ -167,7 +321,6 @@ class WebPage(models.Model):
         'Дата обновления',
         null=True
     )
-
 
     class Meta:
         verbose_name = 'Интернет страница'

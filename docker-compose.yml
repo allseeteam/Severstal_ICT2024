@@ -36,6 +36,18 @@ services:
     depends_on:
       - db
 
+  celery:
+    container_name: celery
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: bash -c "celery -A analyst.celery worker"
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - backend
+
   certbot:
     image: certbot/certbot:latest
     restart: always

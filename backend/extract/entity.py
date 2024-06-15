@@ -12,7 +12,7 @@ import json
 import pandas as pd
 
 
-def prepary_entities(raw_html, url):
+def prepare_entities(raw_html, url, return_dicts=True):
     """
     не-векторизованная версия prepare_raw_data
 
@@ -21,7 +21,22 @@ def prepary_entities(raw_html, url):
     entities = get_entities_from_html(raw_html, url)
     entities = deduplicate_entities(entities)
     entities = calculate_ratios(entities)
-    entities = apply_to_data(entities, dictify_df)
+    if return_dicts:
+        entities = apply_to_data(entities, dictify_df)
+    return entities
+
+
+def prepare_pdf_entities(entities, return_dicts=True):
+    """
+    не-векторизованная версия prepare_raw_data
+
+    также хранит данные (поле frame) как строку (для записи в json поле)
+    """
+    # entities = get_entities_from_html(raw_html, url)
+    entities = deduplicate_entities(entities)
+    entities = calculate_ratios(entities)
+    if return_dicts:
+        entities = apply_to_data(entities, dictify_df)
     return entities
 
 

@@ -147,6 +147,7 @@ class ReportViewSet(
         self.perform_create(serializer)
 
         instance = serializer.instance
+        instance.theme = str(instance.template.theme)
         serializer = serializers.ReportSerializer(instance=instance)
         headers = self.get_success_headers(serializer.data)
         return Response(

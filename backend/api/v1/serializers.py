@@ -1,4 +1,5 @@
 import pickle
+from django.db import models
 from django.db.transaction import atomic
 from django.forms import model_to_dict
 from rest_framework import serializers
@@ -118,7 +119,8 @@ class CreateReportSerializer(serializers.ModelSerializer):
 
         report = Report.objects.create(
             user=user,
-            search_query=search_query
+            search_query=search_query,
+            template=template
         )
 
         for meta_block in template.meta_blocks.all():
@@ -138,14 +140,17 @@ class CreateReportSerializer(serializers.ModelSerializer):
                 entity = model_to_dict(data_obj)
                 entity['frame'] = entity['data']
                 entity['meta'] = entity['meta_data']['title']
-                representation = get_one_figure_by_entity(entity=entity)
+                representation=get_one_figure_by_entity(
+                    entity=entity,
+                    return_plotly_format=True if meta_block.type == MetaBlock.PLOTLY else False
+                )
             else:
                 representation = {}
 
             block = ReportBlock.objects.create(
                 report=report,
                 data=data_obj,
-                type='plotly',  # Святу подумать. UPD от Свята: тут надо получать с фронта. Либо plotly, либо text
+                type=meta_block.type,
                 representation=representation, 
                 position=meta_block.position,
                 readiness=ReportBlock.READY if data_obj else ReportBlock.NOT_READY
@@ -160,22 +165,64 @@ class CreateReportSerializer(serializers.ModelSerializer):
         return report
 
 
+class UpdateReportBlockComment(serializers.ModelSerializer):
+    class Meta:
+        model = ReportBlock
+        fields = ('comment',)
+
+
 class ReportBlockSerializer(serializers.ModelSerializer):
+    source = serializers.SerializerMethodField()
+    
     class Meta:
         model = ReportBlock
         fields = (
             'id',
+            'source',
             'readiness',
             'type',
             'representation',
-            'position'
+            'position',
+            'comment',
+            'summary',
         )
 
+    def get_source(self, obj):
+        return obj.source
 
-class ReportSerializer(serializers.ModelSerializer):
+class ReportLightSerializer(serializers.ModelSerializer):
     search_query = serializers.StringRelatedField()
-    blocks = ReportBlockSerializer(many=True)
+    theme = serializers.SerializerMethodField()
+    template = serializers.StringRelatedField()
 
     class Meta:
         model = Report
-        fields = ('id', 'search_query', 'blocks', 'date')
+        fields = (
+            'id', 'theme', 'template',
+            'search_query',
+            'date'
+        )
+
+    def get_theme(self, obj):
+        return obj.theme
+
+
+class ReportSerializer(ReportLightSerializer):
+    blocks = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Report
+        fields = (
+            'id', 'theme', 'template',
+            'search_query',
+            'blocks', 'date'
+        )
+
+    def get_blocks(self, obj):
+        return ReportBlockSerializer(
+            obj.blocks.all().annotate(
+                source=models.F('data__page__url')
+            ),
+            many=True
+        ).data
+

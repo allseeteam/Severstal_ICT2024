@@ -1,6 +1,19 @@
 from django.db import models
 
 
+class Site(models.Model):
+    domain = models.CharField(
+        'Домен'
+    )
+
+    class Meta:
+        verbose_name = 'Проверенный сайт'
+        verbose_name_plural = 'Проверенные сайты'
+
+    def __str__(self) -> str:
+        return self.domain
+
+
 class SearchQuery(models.Model):
     user = models.ForeignKey(
         'users.User',
@@ -71,6 +84,13 @@ class Template(models.Model):
 
 
 class MetaBlock(models.Model):
+    PLOTLY = 'plotly'
+    TEXT = 'text'
+    TYPES = (
+        (PLOTLY, 'Plotly'),
+        (TEXT, 'Текст')
+    )
+
     query_template = models.CharField(
         'Шаблон запроса'
     )
@@ -79,6 +99,10 @@ class MetaBlock(models.Model):
         on_delete=models.CASCADE,
         related_name='meta_blocks',
         verbose_name='Шаблон отчета'
+    )
+    type = models.CharField(
+        'Тип',
+        choices=TYPES
     )
     position = models.PositiveIntegerField(
         'Позиция'
@@ -108,6 +132,12 @@ class Report(models.Model):
         verbose_name='Поисковый запрос',
         null=True
     )
+    template = models.ForeignKey(
+        'Template',
+        on_delete=models.SET_NULL,
+        verbose_name='Шаблон',
+        null=True
+    )
     date = models.DateTimeField(
         auto_now_add=True
     )
@@ -133,6 +163,13 @@ class ReportBlock(models.Model):
         (ERROR, 'Ошибка')
     )
 
+    PLOTLY = 'plotly'
+    TEXT = 'text'
+    TYPES = (
+        (PLOTLY, 'Plotly'),
+        (TEXT, 'Текст')
+    )
+
     report = models.ForeignKey(
         'Report',
         on_delete=models.CASCADE,
@@ -147,7 +184,18 @@ class ReportBlock(models.Model):
         null=True
     )
     representation = models.JSONField('Представление')
-    type = models.CharField('Тип')
+    type = models.CharField(
+        'Тип',
+        choices=TYPES
+    )
+    comment = models.TextField(
+        'Комментарий',
+        blank=True
+    )
+    summary = models.TextField(
+        'Вывод LLM',
+        blank=True
+    )
     readiness = models.CharField(
         'Готовность',
         choices=READINESS_STATUSES

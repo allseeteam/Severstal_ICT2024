@@ -227,13 +227,10 @@ def get_pie_chart(entity, cat_col=None, float_col=None, is_plotly_obj=True, **kw
             return None  # Какая-то ерунда с многоуровневыми индексами, починить если хватит времени
         values = groupped.values.tolist()
         names = groupped.index.tolist()
-        fig = px.pie(groupped, values=groupped.values.tolist(),
-                     names=groupped.index.tolist(), title=title)
     else:
         values = entity['frame'][float_col].values.tolist()
         names = entity['frame'][cat_col].values.tolist()
-        fig = px.pie(entity['frame'], values=float_col,
-                     names=cat_col, title=title)
+    fig = go.Figure(data=[go.Pie(labels=names, values=values, title=title)])
     if not is_plotly_obj:
         return {'values': values, 'names': names, 'title': title, 'type': 'pie'}
     return fig

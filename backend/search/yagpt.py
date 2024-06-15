@@ -1,4 +1,15 @@
 import requests
+from bs4 import BeautifulSoup
+from search.text import normalize_string
+
+
+def make_prompt_by_html(html_content: str):
+    root = BeautifulSoup(html_content)
+    text = normalize_string(root.text)
+    prompt = f"""Представь, что ты ассистент продуктового аналитика. Я передам тебе текст с аналитического сайта, напиши краткую выжимку. Если в данных есть таблицы, выведи их. Данные:
+    {text}
+    """
+    return prompt
 
 
 def make_req_data(query):

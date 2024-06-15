@@ -7,10 +7,11 @@ import uuid
 
 from bs4 import BeautifulSoup
 from django.utils import timezone
+from search.yagpt import make_prompt_by_html, ask_yagpt
 from langchain_community.document_loaders import AsyncChromiumLoader
 import requests
 
-from analyst.settings import BASE_DIR
+from analyst.settings import BASE_DIR, YANDEX_SEARCH_API_TOKEN
 
 from extract.utils import get_entity_id
 from extract import prepare_entities, is_valid_entity, preprocess_entities, htmlify_df, prepare_pdf_entities
@@ -59,6 +60,23 @@ class FedStatParser:
 
 
 class DataParser:
+    @classmethod
+    def summarize_url(cls, url: str):
+        page = models.WebPage.objects.filter(url=url).first()
+        yagpt_response = ask_yagpt(make_prompt_by_html(page.content), YANDEX_SEARCH_API_TOKEN)
+        data = models.Data(
+                index_id=f'{url}@{hash(yagpt_response)}',
+                type=models.Data.WEB_PAGE,
+                data_type=models.Data.TEXT,
+                page=page,
+                data=yagpt_response,
+                meta_data={},
+                date=datetime.today(),
+                version=0,
+            )
+        data.save()
+        return data
+
     @classmethod
     def page_content_to_data(cls, page: models.WebPage, save: bool = True) -> List[models.Data]:
         try:

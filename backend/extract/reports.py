@@ -212,7 +212,9 @@ def get_line_chart_settings(entity):
 
 
 def get_pie_chart(entity, cat_col=None, float_col=None, is_plotly_obj=True, **kwargs):
-    title = entity['meta']['title']
+    title = entity['meta']
+    if isinstance(title, dict):
+        title = title.get('title', '')
     if cat_col is None:
         return None
     if isinstance(cat_col, tuple):

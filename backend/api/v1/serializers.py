@@ -140,7 +140,7 @@ class CreateReportSerializer(serializers.ModelSerializer):
                 entity = model_to_dict(data_obj)
                 entity['frame'] = entity['data']
                 entity['meta'] = entity['meta_data']['title']
-                representation=get_one_figure_by_entity(
+                representation = get_one_figure_by_entity(
                     entity=entity,
                     return_plotly_format=True if meta_block.type == MetaBlock.PLOTLY else False
                 )
@@ -150,7 +150,7 @@ class CreateReportSerializer(serializers.ModelSerializer):
             block = ReportBlock.objects.create(
                 report=report,
                 data=data_obj,
-                type=meta_block.type,
+                type=meta_block.type, # По сути type из мета блока брать нужно
                 representation=representation, 
                 position=meta_block.position,
                 readiness=ReportBlock.READY if data_obj else ReportBlock.NOT_READY

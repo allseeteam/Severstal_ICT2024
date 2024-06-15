@@ -1,3 +1,7 @@
+import io
+
+from pypdf import PageObject, PdfWriter
+from django.core.files.base import ContentFile
 from django.db import models
 
 
@@ -151,6 +155,19 @@ class Report(models.Model):
     class Meta:
         verbose_name = 'Аналитический отчет'
         verbose_name_plural = 'Аналитические отчеты'
+
+    def get_pdf(self):
+        pdf_buffer = io.BytesIO()
+
+        pdf_writer = PdfWriter()
+        pdf_writer.add_page(PageObject.create_blank_page(width=200, height=200))
+        pdf_writer.write(pdf_buffer)
+
+        pdf_buffer.seek(0)
+        pdf = pdf_buffer.getvalue()
+        file_data = ContentFile(pdf, name=f'report_{self.pk}.pdf')
+
+        return file_data
 
 
 class ReportBlock(models.Model):

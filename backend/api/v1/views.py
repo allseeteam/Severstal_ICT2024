@@ -1,3 +1,4 @@
+from django.http import HttpResponse
 from drf_spectacular import utils as spectacular_utils
 from django.db import models
 from django.db.transaction import atomic
@@ -146,6 +147,7 @@ class ReportViewSet(
         self.perform_create(serializer)
 
         instance = serializer.instance
+        instance.theme = str(instance.template.theme)
         serializer = serializers.ReportSerializer(instance=instance)
         headers = self.get_success_headers(serializer.data)
         return Response(
@@ -153,3 +155,20 @@ class ReportViewSet(
             status=status.HTTP_201_CREATED,
             headers=headers
         )
+    
+    @decorators.action(
+        methods=('get',),
+        detail=True,
+        url_name='download_report'
+    )
+    def download_report(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        file = instance.get_pdf()
+
+        return HttpResponse(
+            file,
+            content_type='application/pdf',
+            headers={'Content-Disposition': f'attachment; filename={file.name}'}
+        ) 
+

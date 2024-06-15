@@ -59,11 +59,6 @@ def convert_html_to_pdf(source_html, output_filename):
     </body>
     </html>
     """
-    # source_html = (
-    #     # '<head><meta http-equiv="content-type" content="text/html; charset=utf-8"></head>'
-    #     '<meta charset="UTF-8">'
-    #     f'{source_html}'
-    # )
     print(source_html)
     result_file = open(output_filename, "w+b")
 
@@ -79,9 +74,12 @@ def convert_html_to_pdf(source_html, output_filename):
 def report_block_template(fig, fig_table, source, caption=''):
     graph_block = (
         ''
-        '<div style="  display: flex;align-items: center;justify-content: center;">'
-        f'<img style="height: 300px; width: 350px;" src="{fig}">'
-        f'<img style="height: 300px; width: 350px;" src="{fig_table}">'
+        '<div>'
+        f'<img style="height: 400px; width: 800px;" src="{fig}">'
+        '</div>'
+        '<br>'
+        '<div>'
+        f'<img style="height: 400px; width: 800px;" src="{fig_table}">'
         '</div>'
         f'<h3>Источник:<a href="{source}">{source}</a></h3>'
         '<div>'

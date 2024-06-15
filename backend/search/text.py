@@ -28,3 +28,19 @@ def normalize_string(s):
     for op in pipeline:
         s = op(s)
     return s
+
+
+def remove_newlines(s):
+    return s.replace('\\n', ' ').replace('\\t', ' ')
+
+
+def normalize_string_repr(s):
+    if not isinstance(s, str):
+        s = str(s)
+    pipeline = [
+        remove_newlines,
+        normalize_whitespace_v2,
+    ]
+    for op in pipeline:
+        s = op(s)
+    return s

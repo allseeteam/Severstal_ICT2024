@@ -2,6 +2,7 @@ import pandas as pd
 from collections import Counter
 
 from tqdm import tqdm
+from search.text import normalize_string_repr
 from extract.html import get_tables_from_raw_html
 from extract.utils import calc_type_distribution, convert_to_datetime, convert_to_float, read_html
 
@@ -135,13 +136,16 @@ def convert_column_type(df_col):
         'float': lambda x: convert_to_float(x, ignore_error=True),
         'datetime': convert_to_datetime,
         'na': lambda x: None,
-        'str': str
+        'str': normalize_string_repr,
     }
 
     try:
         col_type = argmax(type_distr.items())
         col_new_type = df_col.apply(convert_func_dict[col_type])
-        return col_new_type, col_type, col_new_type.nunique()
+        n_unique = col_new_type.nunique()
+        if not isinstance(n_unique, int):
+            n_unique = n_unique.values[0]
+        return col_new_type, col_type, n_unique
     except ValueError:
         pass
     if not isinstance(df_col.nunique(), int):
@@ -188,6 +192,7 @@ def convert_each_column_df(df):
             is_monotonic = all(df.loc[:, col].diff().dropna() == 1)
             if is_monotonic:
                 col_type = 'index'
+
         col_types[col] = col_type
         col_unique_values[col] = unique_values
 

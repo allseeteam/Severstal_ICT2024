@@ -113,7 +113,10 @@ def is_datetime(x):
     if not can_be_converted:
         return False
     dt = convert_to_datetime(x)
-    if dt.timestamp() > datetime.today().timestamp():
+    try:
+        if dt.timestamp() > datetime.today().timestamp():
+            return False
+    except ValueError: # NaT
         return False
     return True
 

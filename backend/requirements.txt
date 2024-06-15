@@ -8,7 +8,7 @@ attrs==23.2.0
 backoff==2.2.1
 beautifulsoup4==4.12.3
 billiard==4.2.0
-camelot-py==0.9.0
+camelot-py==0.11.0
 celery==5.4.0
 certifi==2024.6.2
 cffi==1.16.0
@@ -83,7 +83,7 @@ pyee==11.1.0
 pymorphy3==2.0.1
 pymorphy3-dicts-ru==2.4.417150.4580142
 pypdf==4.2.0
-PyPDF2==3.0.1
+PyPDF2==2.9.0
 pypdfium2==4.30.0
 PySocks==1.7.1
 python-dateutil==2.9.0.post0
@@ -125,3 +125,11 @@ wrapt==1.16.0
 wsproto==1.2.0
 yarl==1.9.4
 html5lib
+# chatgpt-proxy
+kaleido==0.2.1
+xhtml2pdf==0.2.16
+python-docx==1.1.2
+xlsxwriter==3.2.0
+openpyxl==3.1.3
+# gh-md-to-html==1.21.2
+markdown==3.6

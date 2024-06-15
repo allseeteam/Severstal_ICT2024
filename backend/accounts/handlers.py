@@ -16,6 +16,7 @@ from analyst.settings import BASE_DIR, YANDEX_SEARCH_API_TOKEN
 from extract.utils import get_entity_id
 from extract import prepare_entities, is_valid_entity, preprocess_entities, htmlify_df, prepare_pdf_entities
 from extract.pdf import get_tables_from_raw_pdf
+from search import video_inference
 from tqdm import tqdm
 
 from . import models
@@ -61,9 +62,55 @@ class FedStatParser:
 
 class DataParser:
     @classmethod
-    def summarize_url(cls, url: str):
-        # yandexgpt-lite OR yandexgpt
-        model_id = 'yandexgpt-lite'
+    def summarize_video(cls, query, model_id='yandexgpt'):
+        try:
+            video_result = video_inference(
+                query, YANDEX_SEARCH_API_TOKEN, model_id)
+        except Exception as e:
+            print(f'Ошибка в поиске по видео: {e}')
+            return
+        if not video_result:
+            return
+        url = video_result['url']
+        text = video_result['text']
+        title = video_result['title']
+        transcription = video_result['raw_transcription']
+        page = models.WebPage(
+            url=url,
+            title=title,
+            content=transcription,
+        )
+        page.save()
+        data = models.Data(
+            index_id=f'{url}@{hash(text)}',
+            type=models.Data.VIDEO,
+            data_type=models.Data.TEXT,
+            page=page,
+            data=text,
+            meta_data={},
+            date=datetime.today(),
+            version=0,
+        )
+        data.save()
+        return [data]
+
+    @classmethod
+    def summarize_urls_from_search(cls, urls: list[str], model_id='yandexgpt'):
+        for url in urls:
+            try:
+                data_row = cls.summarize_url(url, model_id)
+                if 'сменим тему' in data_row.data or len(data_row.data) < 50:
+                    continue
+                best_data = data_row
+            except Exception:
+                pass
+        if not best_data:
+            return
+        data = [best_data]
+        return data
+
+    @classmethod
+    def summarize_url(cls, url: str, model_id='yandexgpt'):
         page = models.WebPage.objects.filter(url=url).first()
         yagpt_response = ask_yagpt(make_prompt_by_html(
             page.content), YANDEX_SEARCH_API_TOKEN, model_id)

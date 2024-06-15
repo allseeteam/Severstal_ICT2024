@@ -124,6 +124,9 @@ class CreateReportSerializer(serializers.ModelSerializer):
         )
 
         for meta_block in template.meta_blocks.all():
+            # TODO: кажется, если пользователь изначально указал текст, то мы тут все равно можем показать график
+            # хорошо бы поменять. нужно ориентироваться на meta_block.type
+            # block_type = meta_block.type
             data_obj: Data | None = None
             if search_engine:
                 result = search_engine.search(

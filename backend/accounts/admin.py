@@ -28,6 +28,11 @@ class ReportAdmin(admin.ModelAdmin):
     pass
 
 
+@admin.register(models.ReportBlock)
+class ReportBlockAdmin(admin.ModelAdmin):
+    pass
+
+
 @admin.register(models.WebPage)
 class WebPageAdmin(admin.ModelAdmin):
     pass

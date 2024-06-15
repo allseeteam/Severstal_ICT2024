@@ -28,7 +28,10 @@ def add_data_to_report_block(report_block_id: int, meta_block_id: int):
             entity = model_to_dict(data_obj)
             entity['frame'] = entity['data']
             entity['meta'] = entity['meta_data']['title']
-            representation=get_one_figure_by_entity(entity=entity)
+            representation=get_one_figure_by_entity(
+                entity=entity,
+                return_plotly_format=True if meta_block.type == models.MetaBlock.PLOTLY else False
+            )
             
             report_block.data = data_obj
             report_block.representation = representation

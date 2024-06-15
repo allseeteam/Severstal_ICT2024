@@ -1,7 +1,7 @@
 from drf_spectacular import utils as spectacular_utils
 from django.db import models
 from django.db.transaction import atomic
-from rest_framework import viewsets, status, mixins
+from rest_framework import decorators, viewsets, status, mixins
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -78,8 +78,42 @@ class ReportBlockViewSet(
     mixins.RetrieveModelMixin,
     viewsets.GenericViewSet
 ):
-    queryset = ReportBlock.objects.all()
-    serializer_class = serializers.ReportBlockSerializer
+    def get_queryset(self):
+        return ReportBlock.objects \
+            .annotate(
+                source=models.F('data__page__url')
+            )
+
+    def get_serializer_class(self):
+        if self.action == 'add_comment':
+            return serializers.UpdateReportBlockComment
+        return serializers.ReportBlockSerializer
+    
+
+    @decorators.action(
+        methods=('post',),
+        detail=True,
+        url_name='add_comment'
+    )
+    def add_comment(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+    
+    @decorators.action(
+        methods=('get',),
+        detail=True,
+        url_name='generate_summary'
+    )
+    def generate_summary(self, request, *args, **kwargs):
+        instance = self.get_object()
+        #тут надо вставить функцию
+        instance.summary = 'Вывод LLm'
+        instance.save()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
 
 class ReportViewSet(
@@ -90,11 +124,17 @@ class ReportViewSet(
 ):
     def get_queryset(self):
         user = self.request.user
-        return Report.objects.filter(user=user)
+        return Report.objects \
+            .filter(user=user) \
+            .annotate(
+                theme=models.F('template__theme')
+            )
 
     def get_serializer_class(self):
         if self.action == 'create':
             return serializers.CreateReportSerializer
+        if self.action == 'list':
+            return serializers.ReportLightSerializer
         return serializers.ReportSerializer
     
     @atomic

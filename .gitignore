@@ -141,3 +141,4 @@ data
 *.xls
 *.xlsx
 *.pkl
+backend/media

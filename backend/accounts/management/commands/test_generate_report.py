@@ -20,8 +20,9 @@ class Command(BaseCommand):
         entity['meta'] = entity['meta_data']  # ['title']
         entity = preprocess_entities([entity])[0]
         result = get_one_figure_by_entity(entity)
+        print(entity)
         # print(entity['page'])
-        print(entity['frame'].iloc[:10].to_html())
-        print(result)
+        # print(entity['frame'].iloc[:10].to_html())
+        # print(result)
         # print(data)
         # print()

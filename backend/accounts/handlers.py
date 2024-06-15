@@ -13,7 +13,7 @@ import requests
 from analyst.settings import BASE_DIR
 
 from extract.utils import get_entity_id
-from extract import prepare_entities, is_valid_entity, preprocess_entities, htmlify_df
+from extract import prepare_entities, is_valid_entity, preprocess_entities, htmlify_df, prepare_pdf_entities
 from extract.pdf import get_tables_from_raw_pdf
 from tqdm import tqdm
 
@@ -103,9 +103,29 @@ class DataParser:
         return models.Data.objects.bulk_create(objs=objs, ignore_conflicts=True, batch_size=700)
 
     @classmethod
-    def pdf_to_data(cls, path: str) -> List[models.Data]:
-        tables = get_tables_from_raw_pdf(path)
-        pass
+    def pdf_to_data(cls, file: models.Files, path: str) -> List[models.Data]:
+        entities = get_tables_from_raw_pdf(path)
+        try:
+            entities = prepare_pdf_entities(entities, return_dicts=False)
+            entities = preprocess_entities(entities)
+            entities = list(filter(lambda entity: is_valid_entity(entity), entities))
+        except TypeError:
+            return []
+        objs = []
+        for entity in entities:
+            objs.append(
+                models.Data(
+                    index_id=get_entity_id(entity),
+                    type=models.Data.FILE,
+                    data_type=models.Data.DATA_TYPES,
+                    file=file,
+                    data=htmlify_df(entity['frame']),
+                    meta_data=entity['meta'],
+                    date=datetime.today(),
+                    version=0,
+                )
+            )
+        return models.Data.objects.bulk_create(objs=objs, ignore_conflicts=True, batch_size=700)
 
     @classmethod
     def video_to_data(cls, content: str) -> List[models.Data]:

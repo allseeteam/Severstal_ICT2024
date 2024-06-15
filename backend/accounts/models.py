@@ -1,9 +1,8 @@
 import io
 
-from pypdf import PageObject, PdfWriter
 from django.core.files.base import ContentFile
 from django.db import models
-
+from export import preprocess_blocks, save_pdf_report, save_excel_report, save_word_report
 
 class Site(models.Model):
     domain = models.CharField(
@@ -52,7 +51,7 @@ class SearchQuery(models.Model):
 
     def __str__(self) -> str:
         return f'Пользовательский запрос: {self.text}'
-    
+
 
 class Theme(models.Model):
     name = models.CharField(
@@ -65,7 +64,7 @@ class Theme(models.Model):
 
     def __str__(self) -> str:
         return self.name
-    
+
 
 class Template(models.Model):
     name = models.CharField(
@@ -112,7 +111,6 @@ class MetaBlock(models.Model):
         'Позиция'
     )
 
-
     class Meta:
         verbose_name = 'Мета-блок отчета'
         verbose_name_plural = 'Мета-блоки отчетов'
@@ -157,18 +155,37 @@ class Report(models.Model):
         verbose_name_plural = 'Аналитические отчеты'
 
     def get_pdf(self):
-        pdf_buffer = io.BytesIO()
+        blocks = ReportBlock.objects.filter(report_id=self.id).all()
+        if not blocks:
+            return
+        new_blocks, tables = preprocess_blocks(blocks)
+        filename = f'report_{self.pk}.pdf'
+        save_pdf_report(new_blocks, filename)
+        with open(filename, 'rb') as f:
+            content = ContentFile(f.read())
+        return content
 
-        pdf_writer = PdfWriter()
-        pdf_writer.add_page(PageObject.create_blank_page(width=200, height=200))
-        pdf_writer.write(pdf_buffer)
+    def get_word(self):
+        blocks = ReportBlock.objects.filter(report_id=self.id).all()
+        if not blocks:
+            return
+        new_blocks, tables = preprocess_blocks(blocks)
+        filename = f'report_{self.pk}.docx'
+        save_word_report(new_blocks, filename)
+        with open(filename, 'rb') as f:
+            content = ContentFile(f.read())
+        return content
 
-        pdf_buffer.seek(0)
-        pdf = pdf_buffer.getvalue()
-        file_data = ContentFile(pdf, name=f'report_{self.pk}.pdf')
-
-        return file_data
-
+    def get_excel(self):
+        blocks = ReportBlock.objects.filter(report_id=self.id).all()
+        if not blocks:
+            return
+        new_blocks, tables = preprocess_blocks(blocks)
+        filename = f'report_{self.pk}.xlsx'
+        save_excel_report(tables, filename)
+        with open(filename, 'rb') as f:
+            content = ContentFile(f.read())
+        return content
 
 class ReportBlock(models.Model):
     READY = 'ready'
@@ -304,7 +321,6 @@ class WebPage(models.Model):
         'Дата обновления',
         null=True
     )
-
 
     class Meta:
         verbose_name = 'Интернет страница'

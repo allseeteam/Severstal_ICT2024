@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseBadRequest
 from drf_spectacular import utils as spectacular_utils
 from django.db import models
 from django.db.transaction import atomic
@@ -155,7 +155,7 @@ class ReportViewSet(
             status=status.HTTP_201_CREATED,
             headers=headers
         )
-    
+
     @decorators.action(
         methods=('get',),
         detail=True,
@@ -164,7 +164,16 @@ class ReportViewSet(
     def download_report(self, request, *args, **kwargs):
         instance = self.get_object()
 
-        file = instance.get_pdf()
+        report_type = request.GET.get('type', 'pdf')
+
+        if report_type == 'pdf':
+            file = instance.get_pdf()
+        elif report_type == 'word':
+            file = instance.get_word()
+        elif report_type == 'excel':
+            file = instance.get_excel()
+        else:
+            return HttpResponseBadRequest(f'No such report {report_type}. Use `pdf`, `word` or `excel`')
 
         return HttpResponse(
             file,

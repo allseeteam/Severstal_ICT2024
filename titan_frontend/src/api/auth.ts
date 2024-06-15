@@ -17,5 +17,8 @@ export const authApi = async ({ username, password }: AuthParams) => {
     }),
   });
   const result = await response.json();
+  if (response.status !== 200) {
+    throw Error('Wrong credentials or server error');
+  }
   return result;
 };

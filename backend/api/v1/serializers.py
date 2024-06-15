@@ -189,6 +189,20 @@ class ReportBlockSerializer(serializers.ModelSerializer):
 
     def get_source(self, obj):
         return obj.source
+    
+
+class ReportBlockSummaryModelSerializer(serializers.ModelSerializer):
+    type = serializers.ChoiceField(
+        choices=(
+            ('yandexgpt', 'yandexgpt'),
+            ('yandexgpt-lite', 'yandexgpt-lite')
+        )
+    )
+
+    class Meta:
+        model = ReportBlock
+        fields = ('type',)
+
 
 class ReportLightSerializer(serializers.ModelSerializer):
     search_query = serializers.StringRelatedField()

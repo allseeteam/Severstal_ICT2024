@@ -7,6 +7,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from accounts.models import Data, Report, ReportBlock, SearchQuery, Template, Theme
+from analyst.settings import YANDEX_SEARCH_API_TOKEN
+from search.yagpt import ask_yagpt
 from . import serializers
 
 
@@ -88,6 +90,8 @@ class ReportBlockViewSet(
     def get_serializer_class(self):
         if self.action == 'add_comment':
             return serializers.UpdateReportBlockComment
+        if self.action == 'generate_summary':
+            return serializers.ReportBlockSummaryModelSerializer
         return serializers.ReportBlockSerializer
     
 
@@ -104,16 +108,28 @@ class ReportBlockViewSet(
         return Response(serializer.data)
     
     @decorators.action(
-        methods=('get',),
+        methods=('post',),
         detail=True,
         url_name='generate_summary'
     )
     def generate_summary(self, request, *args, **kwargs):
         instance = self.get_object()
-        #тут надо вставить функцию
-        instance.summary = 'Вывод LLm'
-        instance.save()
-        serializer = self.get_serializer(instance)
+        
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        model_id = serializer.data.get('type')
+
+        try:
+            instance.summary = ask_yagpt(
+                instance.data.data,
+                YANDEX_SEARCH_API_TOKEN,
+                model_id
+
+            )
+            instance.save()
+        except:
+            pass
+        serializer = serializers.ReportBlockSerializer(instance)
         return Response(serializer.data)
 
 
@@ -166,7 +182,7 @@ class ReportViewSet(
     def download_report(self, request, *args, **kwargs):
         instance = self.get_object()
 
-        serializer = serializers.ReportFileFormatSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         report_type = serializer.data.get('type')
         

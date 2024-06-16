@@ -86,8 +86,6 @@ export function ReportsTable() {
     },
   });
 
-  const rerender = useReducer(() => ({}), {})[1];
-
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
 
@@ -97,6 +95,20 @@ export function ReportsTable() {
         accessorKey: 'id',
         header: () => <span>#</span>,
         filterFn: 'equalsString', //note: normal non-fuzzy filter column - exact match required
+      },
+      {
+        accessorKey: 'theme',
+        header: () => <span>Тематика</span>,
+        cell: (info) => info.getValue() ?? <div>—</div>,
+        filterFn: 'fuzzy', //note: normal non-fuzzy filter column
+        sortingFn: fuzzySort, //sort by fuzzy rank (falls back to alphanumeric)
+      },
+      {
+        accessorKey: 'template',
+        header: () => <span>Шаблон</span>,
+        cell: (info) => info.getValue() ?? <div>—</div>,
+        filterFn: 'fuzzy', //note: normal non-fuzzy filter column
+        sortingFn: fuzzySort, //sort by fuzzy rank (falls back to alphanumeric)
       },
       {
         accessorKey: 'search_query',
@@ -117,14 +129,13 @@ export function ReportsTable() {
         accessorKey: 'status',
         header: () => <span>Статус</span>,
         cell: (info) => {
-          console.log({ info });
-          const isReady =
-            (
-              info.row?.original?.blocks?.filter(
-                (v) => v?.readiness === 'ready'
-              ) || []
-            ).length > 0;
-          return <div>{isReady ? 'Готов' : 'В процессе'}</div>;
+          // const isReady =
+          //   (
+          //     info.row?.original?.blocks?.filter(
+          //       (v) => v?.readiness === 'ready'
+          //     ) || []
+          //   ).length > 0;
+          return <div>Готов</div>;
         },
         filterFn: 'fuzzy', //note: normal non-fuzzy filter column
         sortingFn: fuzzySort, //sort by fuzzy rank (falls back to alphanumeric)

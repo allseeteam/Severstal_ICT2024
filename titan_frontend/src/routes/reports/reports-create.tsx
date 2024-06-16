@@ -170,22 +170,38 @@ const ReportsCreatePage = () => {
               </div>
             </div>
           </div>
-          <div className="mt-4 flex justify-end mb-4">
-            <Button onClick={generateReport} disabled={reportsLoading}>
-              {reportsLoading ? (
-                <div className="flex items-center justify-center mt-4">
-                  <IconFidgetSpinner className=" animate-spin" size={16} />
-                </div>
-              ) : (
-                'Сгенерировать отчет'
-              )}
-            </Button>
-          </div>
+          {selectedTemplate && searchQuery ? (
+            <div className="mt-4 flex justify-end mb-4">
+              <Button onClick={generateReport} disabled={reportsLoading}>
+                {reportsLoading ? (
+                  <div className="flex items-center justify-center mt-4">
+                    <IconFidgetSpinner className=" animate-spin" size={16} />
+                  </div>
+                ) : (
+                  'Сгенерировать отчет'
+                )}
+              </Button>
+            </div>
+          ) : null}
         </div>
         <div className="w-[40%]">
           <section className="bg-white border rounded-xl">
-            <div className="py-4 px-4 mx-auto max-w-screen-xl sm:py-8 lg:px-6">
-              <p>Секция с инструкцией</p>
+            <div className="py-2 px-6 mx-auto max-w-screen-xl">
+              <p className="font-bold">Инструкция по генерации</p>
+              <div className="mt-4 space-y-4 text-sm">
+                <p>
+                  — Выберите тематику по которой хотите сгенерировать отчет, а
+                  затем введите интересующий запрос по тематике
+                </p>
+                <p>
+                  — Выберите один из готовых шаблонов по тематике или создайте
+                  свой шаблон
+                </p>
+                <p>
+                  — При создании шаблона задайте настройки для каждого блока, по
+                  этим настройкам будут сформированы блоки отчета
+                </p>
+              </div>
             </div>
           </section>
         </div>

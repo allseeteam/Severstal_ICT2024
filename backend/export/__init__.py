@@ -14,7 +14,7 @@ def preprocess_blocks(blocks):  # blocks: list[models.ReportBlock]
     2. список датафреймов (которые лежат внутри блоков) - для экселя
     """
 
-    from extract import preprocess_entity, get_table_fig
+    from extract import preprocess_entity, get_table_fig, get_one_figure_by_entity
 
     tables = []
     new_blocks = []
@@ -28,8 +28,10 @@ def preprocess_blocks(blocks):  # blocks: list[models.ReportBlock]
             entity['frame'] = entity['data']
             entity['meta'] = entity['meta_data'].get('title', '')
             entity = preprocess_entity(entity)
+            fig = get_one_figure_by_entity(entity, return_plotly_format=True)
+            print('REPRESENTATION ', representation)
             table = get_table_fig(entity)
-            fig = go.Figure(representation)
+            # fig = go.Figure(representation)
             filename = f'block_{block.id}.jpg'
             filename_table = f'block_{block.id}_table.jpg'
             plotly.io.write_image(fig, filename, format='jpg')

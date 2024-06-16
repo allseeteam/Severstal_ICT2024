@@ -147,7 +147,7 @@ class ReportViewSet(
         return Report.objects \
             .filter(user=user) \
             .annotate(
-                theme=models.F('template__theme')
+                theme=models.F('template__theme__name')
             )
 
     def get_serializer_class(self):

@@ -131,11 +131,3 @@ python manage.py generate_search.py search.pkl
 TODO: перенести название файлика в конфиг
 
 4. Можно запускать, все заработает по эндпоинту `/api/v1/search/?q=банк`
-
-# PDF
-
-[https://camelot-py.readthedocs.io/en/master/user/install-deps.html](https://camelot-py.readthedocs.io/en/master/user/install-deps.html)
-
-```bash
-apt install ghostscript python3-tk
-```

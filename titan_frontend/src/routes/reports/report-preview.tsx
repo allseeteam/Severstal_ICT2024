@@ -152,7 +152,11 @@ const ReportPreviewPage = () => {
                       ) : (
                         <div>
                           {block.type === 'text' ? (
-                            <div>{block.representation.text}</div>
+                            <div
+                              dangerouslySetInnerHTML={{
+                                __html: block.representation,
+                              }}
+                            ></div>
                           ) : (
                             <Plot
                               data={block.representation.data}

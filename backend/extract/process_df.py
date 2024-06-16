@@ -4,7 +4,7 @@ from collections import Counter
 from tqdm import tqdm
 from search.text import normalize_string_repr
 from extract.html import get_tables_from_raw_html
-from extract.utils import calc_type_distribution, convert_to_datetime, convert_to_float, read_html
+from extract.utils import calc_type_distribution, convert_to_datetime, convert_to_float, read_html, is_na
 
 
 def get_entities_from_html_df(df):
@@ -175,6 +175,17 @@ def is_categorical(series, unique_values, col_type):
 def convert_each_column_df(df):
     col_types = {}
     col_unique_values = {}
+    if not isinstance(df.columns, pd.MultiIndex):
+        i = 0
+        new_cols = []
+        for col in df.columns:
+            if is_na(col):
+                new_col_name = i
+                i += 1
+            else:
+                new_col_name = col
+            new_cols.append(new_col_name)
+        df.columns = new_cols
     for col in df.columns:
         try:
             df.loc[:, col], col_type, unique_values = convert_column_type(
@@ -216,6 +227,7 @@ def preprocess_entity(entity):
     df = replace_df_values(df)
     df = find_header(df)
     df = replace_df_values(df)
+    print(df)
     df, col_types, col_unique_values = convert_each_column_df(df)
     entity['frame'] = df
     entity['col_types'] = col_types

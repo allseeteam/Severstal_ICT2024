@@ -93,7 +93,6 @@ class SearchEngine:
         for kw in keywords:
             kw_urls_score = self.bm25(kw)
             url_scores = self.update_url_scores(url_scores, kw_urls_score)
-
         url_scores = sorted(url_scores.items(),
                             key=lambda x: x[1], reverse=True)
         url_scores = url_scores[((page - 1) * page_size):page * page_size]
@@ -111,8 +110,9 @@ class SearchEngine:
         else:
             # старое поведение, если хотим индексировать из ноутбука
             entity_id = get_entity_id(entity)
+        data_id = entity['data_id']
         search_content = normalize_entity(entity)
-        self.index(entity_id, search_content, entity)
+        self.index(data_id, search_content, entity)
 
     def bulk_index_entities(self, entities: list[dict]):
         for entity in entities:

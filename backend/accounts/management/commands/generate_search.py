@@ -1,12 +1,12 @@
 import json
 import pickle
-
+from tqdm import tqdm
 import pandas as pd
 
 from django.core.management.base import BaseCommand
 from django.forms.models import model_to_dict
 
-from extract import read_html
+from extract import preprocess_entities, preprocess_entity
 from search import SearchEngine
 from accounts import models
 
@@ -25,12 +25,19 @@ class Command(BaseCommand):
         entities = models.Data.objects.all()
         print(f'Read {len(entities)} entities')
         entities = [model_to_dict(r) for r in entities]
-        for entity in entities:
-            # print(entity['index_id'], entity['page'])
-            entity['frame'] = read_html(entity['data'])
-            entity['meta'] = entity['meta_data']['title']
+        for entity in tqdm(entities):
+            entity['data_id'] = entity['id']
+            if entity['data_type'] == models.Data.TEXT:
+                entity['meta'] = entity['data']
+                entity['frame'] = pd.DataFrame()
+            else:
+                entity['frame'] = entity['data']
+                entity['meta'] = entity['meta_data']['title']
+                entity = preprocess_entity(entity)
             # break
-        se = SearchEngine()
-        se.bulk_index_entities(entities)
+        # entities = preprocess_entities(entities)
+            se = SearchEngine()
+            se.index_entity(entity)
+            # se.bulk_index_entities(entities)
         print(f'Saving search engine to {output}')
         pickle.dump(se, open(output, 'wb'))

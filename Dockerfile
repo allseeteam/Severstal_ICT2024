@@ -4,7 +4,7 @@ ENV PYTHONUNBUFFERED 1
 
 WORKDIR /app
 
-COPY ./backend /app
+COPY ./backend/requirements.txt requirements.txt
 
 RUN apt-get update && apt-get install ffmpeg libsm6 libxext6  -y \
     &&  apt install netcat-traditional \
@@ -12,6 +12,8 @@ RUN apt-get update && apt-get install ffmpeg libsm6 libxext6  -y \
     && playwright install-deps \
     && playwright install \
     && ruwordnet download
+
+COPY ./backend /app
 
 COPY ./deploy/start.sh /start.sh
 RUN chmod +x /start.sh

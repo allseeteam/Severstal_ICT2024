@@ -114,20 +114,23 @@ class ReportBlockViewSet(
     )
     def generate_summary(self, request, *args, **kwargs):
         instance = self.get_object()
-        
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         model_id = serializer.data.get('type')
 
         try:
+            prompt = instance.data.data + '\nКомментарий от пользователя:' + instance.comment
+            print(prompt)
             instance.summary = ask_yagpt(
-                instance.data.data,
+                prompt,
                 YANDEX_SEARCH_API_TOKEN,
                 model_id
 
             )
             instance.save()
-        except:
+        except Exception as e:
+            print(e)
             pass
         serializer = serializers.ReportBlockSerializer(instance)
         return Response(serializer.data)

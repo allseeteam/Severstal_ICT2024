@@ -39,9 +39,13 @@ def get_video_transcription(video_id):
 
 
 def find_youtube_video(query):
+    print(f'Search on YouTube: {query}')
     videosSearch = VideosSearch(query, limit=1)
+    print(f'Found {len(videosSearch.result()["result"])} video')
     try:
-        return videosSearch.result()['result'][0]
+        video = videosSearch.result()['result'][0]
+        video['url'] = f'https://youtube.com/watch?v={video["id"]}'
+        return video
     except Exception as e:
         print(e)
     return None

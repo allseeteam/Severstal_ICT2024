@@ -2,13 +2,15 @@ import pickle
 from django.db import models
 from django.db.transaction import atomic
 from django.forms import model_to_dict
+from search import ya_search, find_youtube_video
+from analyst.settings import YANDEX_SEARCH_API_TOKEN
 from rest_framework import serializers
 
 from accounts.models import (
-    Data, MetaBlock, Report,
+    WebPage, Data, MetaBlock, Report,
     ReportBlock, SearchQuery, Template, Theme
 )
-from accounts.tasks import add_data_to_report_block
+from accounts.tasks import add_data_to_report_block, add_video_data_to_report_block, add_search_data_to_report_block
 from extract.reports import get_one_figure_by_entity
 
 
@@ -47,7 +49,7 @@ class DataSearchSerializer(serializers.ModelSerializer):
 class MetaBlockSerializer(serializers.ModelSerializer):
     class Meta:
         model = MetaBlock
-        fields = ('id', 'query_template', 'position')
+        fields = ('id', 'query_template', 'position', 'type')
 
 
 class TemplateSerializer(serializers.ModelSerializer):
@@ -77,6 +79,7 @@ class CreateTemplateSerializer(serializers.ModelSerializer):
             MetaBlock(
                 query_template=block.get('query_template'),
                 position=block.get('position'),
+                type=block.get('type', MetaBlock.PLOTLY),
                 template=template
             )
             for block in meta_blocks
@@ -106,6 +109,35 @@ class CreateReportSerializer(serializers.ModelSerializer):
             'search_query'
         )
 
+    def get_data_from_search_engine(self, search_query_text):
+        if search_engine:
+            result = search_engine.search(
+                search_query_text
+            )
+            index_ids = list(map(lambda x: x[0], result))
+            data = Data.objects.filter(
+                index_id__in=index_ids
+            )
+            if data.count() > 0:
+                data = data[0]
+            else:
+                data = None
+            return data
+
+    def represent_data_obj(self, data_obj, block_type):
+        if data_obj:
+            if block_type == MetaBlock.TEXT or block_type == MetaBlock.VIDEO:
+                return {'text': data_obj.data}
+            entity = model_to_dict(data_obj)
+            entity['frame'] = entity['data']
+            entity['meta'] = entity['meta_data'].get('title', '')
+            representation = get_one_figure_by_entity(
+                entity=entity,
+                return_plotly_format=True if block_type == MetaBlock.PLOTLY else False
+            )
+            return representation
+        return {}
+
     def create(self, validated_data):
         request = self.context.get('request')
         user = request.user
@@ -127,37 +159,79 @@ class CreateReportSerializer(serializers.ModelSerializer):
             # TODO: кажется, если пользователь изначально указал текст, то мы тут все равно можем показать график
             # хорошо бы поменять. нужно ориентироваться на meta_block.type
             # block_type = meta_block.type
+            urls_to_parse: list[str] = []
+            video_to_summarize: str = []
+
+            search_query_text = f'{meta_block.query_template} {search_query}'
             data_obj: Data | None = None
-            if search_engine:
-                result = search_engine.search(
-                    f'{meta_block.query_template} {search_query}'
-                )
-                index_ids = list(map(lambda x: x[0], result))
-                data = Data.objects.filter(
-                    index_id__in=index_ids
-                )
-                if data.count() > 0:
-                    data_obj = data[0]
+            if meta_block.type == MetaBlock.PLOTLY:
+                data_obj = self.get_data_from_search_engine(search_query_text)
+                representation = self.represent_data_obj(
+                    data_obj, meta_block.type)
 
-            if data_obj:
-                entity = model_to_dict(data_obj)
-                entity['frame'] = entity['data']
-                entity['meta'] = entity['meta_data']['title']
-                representation = get_one_figure_by_entity(
-                    entity=entity,
-                    return_plotly_format=True if meta_block.type == MetaBlock.PLOTLY else False
+            elif meta_block.type == MetaBlock.TEXT:
+                search = ya_search(
+                    search_query,
+                    YANDEX_SEARCH_API_TOKEN
                 )
+
+                urls = [r.get('url') for r in search]
+                parsed_pages = WebPage.objects.filter(url__in=urls).all()
+                parsed_urls = [page.url for page in parsed_pages]
+                indexed_data = Data.objects.filter(
+                    type=Data.TEXT, page__in=parsed_pages).all()
+                if indexed_data:
+                    representation = self.represent_data_obj(
+                        indexed_data[0], MetaBlock.TEXT)
+                else:
+                    urls_to_parse += list(set(urls).difference(set(parsed_urls)))
+                    representation = {}
+            elif meta_block.type == MetaBlock.VIDEO:
+                video = find_youtube_video(f'{search_query_text} аналитика')
+                # print(video)
+                url = video['url']
+                video_page = WebPage.objects.filter(url=url).first()
+                all_yt = WebPage.objects.filter(url__startswith='https://youtube.com/').all()
+                print(url, video_page, len(all_yt), all_yt[0].url)
+                if video_page:
+                    data_obj = Data.objects.filter(page=video_page).first()
+                    print(f'В базе найдено видео: {data_obj}')
+                    if not data_obj:
+                        data_obj = None
+                    # if len(data_obj) == 0:
+                        # data_obj = None
+                    representation = self.represent_data_obj(data_obj, MetaBlock.VIDEO)
+                else:
+                    video_to_summarize = url
+                    representation = {}
             else:
-                representation = {}
+                raise ValueError(
+                    f'No type meta_block type: {meta_block.type}. Only allowed {MetaBlock.TYPES}')
 
+            print(meta_block.type)
+            print(representation)
+            # if not isinstance(data_obj, Data):
+            #     data_obj = None
             block = ReportBlock.objects.create(
                 report=report,
                 data=data_obj,
-                type=meta_block.type, # По сути type из мета блока брать нужно
-                representation=representation, 
+                type=meta_block.type,
+                representation=representation,
                 position=meta_block.position,
                 readiness=ReportBlock.READY if data_obj else ReportBlock.NOT_READY
             )
+
+            if representation == {}:
+                if video_to_summarize:
+                    add_video_data_to_report_block.apply_async(
+                        args=(block.id, meta_block.id, video_to_summarize),
+                        countdown=15
+                    )
+                elif urls_to_parse:
+                    add_search_data_to_report_block.apply_async(
+                        args=(block.id, urls_to_parse),
+                        countdown=15
+                    )
 
             if not data_obj:
                 add_data_to_report_block.apply_async(
@@ -176,7 +250,7 @@ class UpdateReportBlockComment(serializers.ModelSerializer):
 
 class ReportBlockSerializer(serializers.ModelSerializer):
     source = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = ReportBlock
         fields = (
@@ -205,6 +279,7 @@ class ReportBlockSummaryModelSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReportBlock
         fields = ('type',)
+
 
 
 class ReportLightSerializer(serializers.ModelSerializer):

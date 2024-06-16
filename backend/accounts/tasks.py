@@ -98,34 +98,36 @@ def process_block(report_block_id: int, meta_block_id: int, model_id='yandexgpt'
         if data:
             data = [data]
 
-    report_block.readiness = models.ReportBlock.ERROR
-    for data_obj in data:
-        try:
-            entity = model_to_dict(data_obj)
-            if entity['data_type'] == 'text':
+    if data is None:
+        report_block.readiness = models.ReportBlock.ERROR
+    else:
+        for data_obj in data:
+            try:
+                entity = model_to_dict(data_obj)
+                if entity['data_type'] == 'text':
+                    report_block.data = data_obj
+                    report_block.representation = {'text': data_obj.data}
+                    report_block.readiness = models.ReportBlock.READY
+                    report_block.type = 'text'
+                    break
+                print(entity)
+                entity['frame'] = entity['data']
+
+                entity['meta'] = entity['meta_data'].get('title', '')
+
+                entity = preprocess_entity(entity)
+                representation = get_one_figure_by_entity(
+                    entity=entity, return_plotly_format=True)
+                representation = representation.to_dict()
+
                 report_block.data = data_obj
-                report_block.representation = {'text': data_obj.data}
+                report_block.representation = representation
+                report_block.type = models.ReportBlock.PLOTLY
                 report_block.readiness = models.ReportBlock.READY
-                report_block.type = 'text'
                 break
-            print(entity)
-            entity['frame'] = entity['data']
-
-            entity['meta'] = entity['meta_data'].get('title', '')
-
-            entity = preprocess_entity(entity)
-            representation = get_one_figure_by_entity(
-                entity=entity, return_plotly_format=True)
-            representation = representation.to_dict()
-
-            report_block.data = data_obj
-            report_block.representation = representation
-            report_block.type = models.ReportBlock.PLOTLY
-            report_block.readiness = models.ReportBlock.READY
-            break
-        except Exception as e:
-            print(e)
-            continue
+            except Exception as e:
+                print(e)
+                continue
 
     if report_block.readiness != models.ReportBlock.READY:
         report_block.readiness = models.ReportBlock.ERROR

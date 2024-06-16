@@ -6,6 +6,7 @@ from extract.process_df import preprocess_entity
 from search import ya_search, find_youtube_video
 from analyst.settings import BASE_DIR, YANDEX_SEARCH_API_TOKEN
 from rest_framework import serializers
+import markdown
 
 from accounts.models import (
     WebPage, Data, MetaBlock, Report,
@@ -249,6 +250,8 @@ class UpdateReportBlockComment(serializers.ModelSerializer):
 
 class ReportBlockSerializer(serializers.ModelSerializer):
     source = serializers.SerializerMethodField()
+    summary = serializers.SerializerMethodField()
+    representation = serializers.SerializerMethodField()
 
     class Meta:
         model = ReportBlock
@@ -265,7 +268,14 @@ class ReportBlockSerializer(serializers.ModelSerializer):
 
     def get_source(self, obj):
         return obj.source
-    
+
+    def get_summary(self, obj):
+        return markdown.markdown(obj.summary)
+
+    def get_representation(self, obj):
+        if 'text' in obj.representation:
+            return markdown.markdown(obj.representation['text'])
+        return obj.representation
 
 class ReportBlockSummaryModelSerializer(serializers.ModelSerializer):
     type = serializers.ChoiceField(
@@ -299,7 +309,7 @@ class ReportLightSerializer(serializers.ModelSerializer):
     
     def get_readiness(self, obj):
         # В проде надо такое оптимизировать
-        return not ReportBlock.objects.filter(readiness=ReportBlock.NOT_READY).exists()
+        return not obj.blocks.filter(readiness=ReportBlock.NOT_READY).exists()
 
 
 class ReportSerializer(ReportLightSerializer):

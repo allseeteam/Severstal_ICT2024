@@ -1,3 +1,32 @@
+# Стек технологий
+
+1. Бекенд:
+   - Python/Django
+   - PostgreSQL
+   - Celery/RabbitMQ
+3. Обработка данных:
+   -
+4. Frontend:
+   -
+
+# Запуск на сервере
+
+1. Скачать репозитарий
+   ```
+   git@github.com:allseeteam/Severstal_ICT2024.git
+   ```
+2. Установка переменных окружения:
+- Переименовать файл .env.example в .env
+- При необходимости внести изменения
+
+3. Отредактировать файл init-letsencrypt.sh
+- Вставить название домена, для которого создается ssl сертификат
+- Вставить валидный email администратора
+
+4. Запустить файл init-letsencrypt.sh
+
+
+
 # Запуск бекенда в режиме разработки локально
 
 Создание и активация виртуального окружения:
@@ -102,11 +131,3 @@ python manage.py generate_search.py search.pkl
 TODO: перенести название файлика в конфиг
 
 4. Можно запускать, все заработает по эндпоинту `/api/v1/search/?q=банк`
-
-# PDF
-
-[https://camelot-py.readthedocs.io/en/master/user/install-deps.html](https://camelot-py.readthedocs.io/en/master/user/install-deps.html)
-
-```bash
-apt install ghostscript python3-tk
-```

@@ -50,7 +50,7 @@ class SearchQuery(models.Model):
         ]
 
     def __str__(self) -> str:
-        return f'Пользовательский запрос: {self.text}'
+        return f'{self.text}'
 
 
 class Theme(models.Model):
@@ -162,7 +162,8 @@ class Report(models.Model):
             return
         new_blocks, tables = preprocess_blocks(blocks)
         filename = f'report_{self.pk}.pdf'
-        save_pdf_report(new_blocks, filename)
+        title = self.search_query
+        save_pdf_report(title, new_blocks, tables, filename)
         with open(filename, 'rb') as f:
             content = ContentFile(f.read())
         return content

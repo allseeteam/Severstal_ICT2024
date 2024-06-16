@@ -4,21 +4,21 @@ from io import StringIO
 from analyst.settings import BASE_DIR
 
 
-def save_pdf_report(blocks: dict, output_path):
+def save_pdf_report(title, blocks: dict, tables, output_path):
     static_report = ''
-    for block in blocks:
+    for block, table in zip(blocks, tables):
         source = block['source']
         if block['type'] == 'plotly':
             fig, fig_table = block['path_fig'], block['path_table']
             static_report += report_block_template(
-                fig, fig_table, source, caption='')
+                fig, table, source, caption='')
         elif block['type'] == 'text':
             text = block['html_text']
             static_report += report_text_block_template(text, source)
-    convert_html_to_pdf(static_report, output_path)
+    convert_html_to_pdf(title, static_report, output_path)
 
 
-def convert_html_to_pdf(source_html, output_filename):
+def convert_html_to_pdf(title, source_html, output_filename):
     path_to_helvetica = f'{BASE_DIR}/helvetica.ttf'
     print(path_to_helvetica)
     source_html = """
@@ -51,7 +51,7 @@ def convert_html_to_pdf(source_html, output_filename):
     <body>
         <div id="outer">
             <h2 class="inner">Титульный лист</h2>
-            <h1 class="inner" style="font-size:40px">Аналитический отчет</h1>
+            <h1 class="inner" style="font-size:40px">Отчет по теме<br>{title}</h1>
             <h3 class="inner">Тут мог быть ваш корпоративный шаблон</h3>
             <div>
                 <pdf:nextpage /> 
@@ -73,7 +73,7 @@ def convert_html_to_pdf(source_html, output_filename):
     return pisa_status.err
 
 
-def report_block_template(fig, fig_table, source, caption=''):
+def report_block_template(fig, table, source, caption=''):
     graph_block = (
         ''
         '<div>'
@@ -83,7 +83,8 @@ def report_block_template(fig, fig_table, source, caption=''):
         '<br>'
         '<div>'
         # f'<img style="height: 400px; width: 800px;" src="{fig_table}">'
-        f'<img src="{fig_table}">'
+        # f'<img src="{fig_table}">'
+        f'{table.to_html()}'
         '</div>'
         f'<h3>Источник:<a href="{source}">{source}</a></h3>'
         '<div>'

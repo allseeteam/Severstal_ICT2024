@@ -75,38 +75,41 @@ class DataParser:
         text = video_result['text']
         title = video_result['title']
         transcription = video_result['raw_transcription']
-        page = models.WebPage(
-            url=url,
-            title=title,
-            content=transcription,
-        )
-        page.save()
+        video_page = models.WebPage.objects.filter(url=url).first()
+        if not video_page:
+            video_page = models.WebPage(
+                url=url,
+                title=title,
+                content=transcription,
+            )
+            video_page.save()
         data = models.Data(
             index_id=f'{url}@{hash(text)}',
             type=models.Data.VIDEO,
             data_type=models.Data.TEXT,
-            page=page,
+            page=video_page,
             data=text,
             meta_data={},
             date=datetime.today(),
             version=0,
         )
         data.save()
-        return [data]
+        return data
 
     @classmethod
     def summarize_urls_from_search(cls, urls: list[str], model_id='yandexgpt'):
+        data = None
         for url in urls:
             try:
                 data_row = cls.summarize_url(url, model_id)
                 if 'сменим тему' in data_row.data or len(data_row.data) < 50:
                     continue
-                best_data = data_row
+                data = data_row
             except Exception:
                 pass
-        if not best_data:
+        if not data:
             return
-        data = [best_data]
+        data = [data]
         return data
 
     @classmethod

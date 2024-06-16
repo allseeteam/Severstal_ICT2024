@@ -50,7 +50,7 @@ class SearchQuery(models.Model):
         ]
 
     def __str__(self) -> str:
-        return f'Пользовательский запрос: {self.text}'
+        return f'{self.text}'
 
 
 class Theme(models.Model):
@@ -89,9 +89,11 @@ class Template(models.Model):
 class MetaBlock(models.Model):
     PLOTLY = 'plotly'
     TEXT = 'text'
+    VIDEO = 'video'
     TYPES = (
         (PLOTLY, 'Plotly'),
-        (TEXT, 'Текст')
+        (TEXT, 'Текст'),
+        (VIDEO, 'Видео'),
     )
 
     query_template = models.CharField(
@@ -155,18 +157,19 @@ class Report(models.Model):
         verbose_name_plural = 'Аналитические отчеты'
 
     def get_pdf(self):
-        blocks = ReportBlock.objects.filter(report_id=self.id).all()
+        blocks = self.blocks.filter(readiness=ReportBlock.READY)
         if not blocks:
             return
         new_blocks, tables = preprocess_blocks(blocks)
         filename = f'report_{self.pk}.pdf'
-        save_pdf_report(new_blocks, filename)
+        title = self.search_query
+        save_pdf_report(title, new_blocks, tables, filename)
         with open(filename, 'rb') as f:
             content = ContentFile(f.read())
         return content
 
     def get_word(self):
-        blocks = ReportBlock.objects.filter(report_id=self.id).all()
+        blocks = self.blocks.filter(readiness=ReportBlock.READY)
         if not blocks:
             return
         new_blocks, tables = preprocess_blocks(blocks)
@@ -177,7 +180,7 @@ class Report(models.Model):
         return content
 
     def get_excel(self):
-        blocks = ReportBlock.objects.filter(report_id=self.id).all()
+        blocks = self.blocks.filter(readiness=ReportBlock.READY)
         if not blocks:
             return
         new_blocks, tables = preprocess_blocks(blocks)

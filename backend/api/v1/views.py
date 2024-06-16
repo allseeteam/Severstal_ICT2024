@@ -7,6 +7,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from accounts.models import Data, Report, ReportBlock, SearchQuery, Template, Theme
+from analyst.settings import YANDEX_SEARCH_API_TOKEN
+from search.yagpt import ask_yagpt
 from . import serializers
 
 
@@ -88,6 +90,8 @@ class ReportBlockViewSet(
     def get_serializer_class(self):
         if self.action == 'add_comment':
             return serializers.UpdateReportBlockComment
+        if self.action == 'generate_summary':
+            return serializers.ReportBlockSummaryModelSerializer
         return serializers.ReportBlockSerializer
     
 
@@ -104,16 +108,31 @@ class ReportBlockViewSet(
         return Response(serializer.data)
     
     @decorators.action(
-        methods=('get',),
+        methods=('post',),
         detail=True,
         url_name='generate_summary'
     )
     def generate_summary(self, request, *args, **kwargs):
         instance = self.get_object()
-        #тут надо вставить функцию
-        instance.summary = 'Вывод LLm'
-        instance.save()
-        serializer = self.get_serializer(instance)
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        model_id = serializer.data.get('type')
+
+        try:
+            prompt = instance.data.data + '\nКомментарий от пользователя:' + instance.comment
+            print(prompt)
+            instance.summary = ask_yagpt(
+                prompt,
+                YANDEX_SEARCH_API_TOKEN,
+                model_id
+
+            )
+            instance.save()
+        except Exception as e:
+            print(e)
+            pass
+        serializer = serializers.ReportBlockSerializer(instance)
         return Response(serializer.data)
 
 
@@ -136,6 +155,8 @@ class ReportViewSet(
             return serializers.CreateReportSerializer
         if self.action == 'list':
             return serializers.ReportLightSerializer
+        if self.action == 'download_report':
+            return serializers.ReportFileFormatSerializer
         return serializers.ReportSerializer
     
     @atomic
@@ -155,29 +176,29 @@ class ReportViewSet(
             status=status.HTTP_201_CREATED,
             headers=headers
         )
-
+    
     @decorators.action(
-        methods=('get',),
+        methods=('post',),
         detail=True,
         url_name='download_report'
     )
     def download_report(self, request, *args, **kwargs):
         instance = self.get_object()
 
-        report_type = request.GET.get('type', 'pdf')
-
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        report_type = serializer.data.get('type')
+        
         if report_type == 'pdf':
             file = instance.get_pdf()
-        elif report_type == 'word':
+        elif report_type == 'msword':
             file = instance.get_word()
-        elif report_type == 'excel':
+        elif report_type == 'vnd.openxmlformats-officedocument.spreadsheetml.sheet':
             file = instance.get_excel()
-        else:
-            return HttpResponseBadRequest(f'No such report {report_type}. Use `pdf`, `word` or `excel`')
 
         return HttpResponse(
             file,
-            content_type='application/pdf',
+            content_type=f'application/{report_type}',
             headers={'Content-Disposition': f'attachment; filename={file.name}'}
         ) 
 

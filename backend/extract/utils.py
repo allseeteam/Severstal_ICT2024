@@ -116,7 +116,9 @@ def is_datetime(x):
     try:
         if dt.timestamp() > datetime.today().timestamp():
             return False
-    except ValueError: # NaT
+        if dt.timestamp() < datetime(1990, 1, 1, 0, 0, 0).timestamp():
+            return False
+    except ValueError:  # NaT
         return False
     return True
 

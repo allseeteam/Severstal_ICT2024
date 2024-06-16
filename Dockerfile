@@ -10,7 +10,8 @@ RUN apt-get update && apt-get install ffmpeg libsm6 libxext6  -y \
     &&  apt install netcat-traditional \
     && pip install --no-cache-dir --upgrade -r requirements.txt \
     && playwright install-deps \
-    && playwright install 
+    && playwright install \
+    && ruwordnet download
 
 COPY ./deploy/start.sh /start.sh
 RUN chmod +x /start.sh

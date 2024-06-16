@@ -115,6 +115,14 @@ const ReportPreviewPage = () => {
         ) : (
           <div className="space-y-2">
             <div>
+              <p className="font-bold">Тематика</p>
+              <p>{reportData.theme}</p>
+            </div>
+            <div>
+              <p className="font-bold">Шаблон</p>
+              <p>{reportData.template}</p>
+            </div>
+            <div>
               <p className="font-bold">Запрос</p>
               <p>{reportData.search_query}</p>
             </div>
@@ -132,16 +140,14 @@ const ReportPreviewPage = () => {
                     <div key={block.id}>
                       {block.readiness === 'not_ready' ? (
                         <div className="my-4 flex items-center space-x-2">
-                          <p>
-                            Блок #{block.position + 1} еще не готов, в процессе
-                          </p>
+                          <p>Блок #{block.position} еще не готов, в процессе</p>
                           <span className="">
                             <IconFidgetSpinner className="animate-spin" />
                           </span>
                         </div>
                       ) : block.readiness === 'error' ? (
                         <div className="my-4">
-                          Ошибка в генерации блока #{block.position + 1}
+                          Ошибка в генерации блока #{block.position}
                         </div>
                       ) : (
                         <div>

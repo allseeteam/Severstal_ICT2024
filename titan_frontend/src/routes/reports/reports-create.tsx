@@ -42,6 +42,7 @@ const ReportsCreatePage = () => {
   const onTemplateCreated = async (params: {
     name: string;
     query_template: string[];
+    type: string[];
   }) => {
     if (!selectedTheme) {
       console.error('no theme chosen');
@@ -53,6 +54,7 @@ const ReportsCreatePage = () => {
       meta_blocks: params.query_template.map((v, i) => ({
         query_template: v,
         position: i,
+        type: params.type[i] ?? 'plotly',
       })),
     };
     await postTemplateApi(templateParams);
@@ -144,7 +146,7 @@ const ReportsCreatePage = () => {
             <p className="text-sm font-bold">
               3. Выберите шаблон или создайте новый
             </p>
-            <div className="mt-4 w-full">
+            <div className="my-4 w-full">
               <div className="grid grid-cols-2 xl:grid-cols-3 gap-2">
                 {templatesByTheme?.length
                   ? templatesByTheme.map((template: any) => (
@@ -174,7 +176,7 @@ const ReportsCreatePage = () => {
             <div className="mt-4 flex justify-end mb-4">
               <Button onClick={generateReport} disabled={reportsLoading}>
                 {reportsLoading ? (
-                  <div className="flex items-center justify-center mt-4">
+                  <div className="flex items-center justify-center">
                     <IconFidgetSpinner className=" animate-spin" size={16} />
                   </div>
                 ) : (

@@ -99,14 +99,24 @@ export function ReportsTable() {
       {
         accessorKey: 'theme',
         header: () => <span>Тематика</span>,
-        cell: (info) => info.getValue() ?? <div>—</div>,
+        cell: (info) =>
+          (
+            <div className="max-w-[220px] overflow-hidden text-ellipsis">
+              {info.getValue()}
+            </div>
+          ) ?? <div>—</div>,
         filterFn: 'fuzzy', //note: normal non-fuzzy filter column
         sortingFn: fuzzySort, //sort by fuzzy rank (falls back to alphanumeric)
       },
       {
         accessorKey: 'template',
         header: () => <span>Шаблон</span>,
-        cell: (info) => info.getValue() ?? <div>—</div>,
+        cell: (info) =>
+          (
+            <div className="max-w-[220px] overflow-hidden text-ellipsis">
+              {info.getValue()}
+            </div>
+          ) ?? <div>—</div>,
         filterFn: 'fuzzy', //note: normal non-fuzzy filter column
         sortingFn: fuzzySort, //sort by fuzzy rank (falls back to alphanumeric)
       },
@@ -126,7 +136,7 @@ export function ReportsTable() {
         sortingFn: fuzzySort, //sort by fuzzy rank (falls back to alphanumeric)
       },
       {
-        accessorKey: 'status',
+        accessorKey: 'readiness',
         header: () => <span>Статус</span>,
         cell: (info) => {
           // const isReady =
@@ -135,7 +145,7 @@ export function ReportsTable() {
           //       (v) => v?.readiness === 'ready'
           //     ) || []
           //   ).length > 0;
-          return <div>Готов</div>;
+          return info.getValue() ? <div>Готов</div> : <div>В процессе</div>;
         },
         filterFn: 'fuzzy', //note: normal non-fuzzy filter column
         sortingFn: fuzzySort, //sort by fuzzy rank (falls back to alphanumeric)

@@ -299,7 +299,7 @@ class ReportLightSerializer(serializers.ModelSerializer):
     
     def get_readiness(self, obj):
         # В проде надо такое оптимизировать
-        return not ReportBlock.objects.filter(readiness=ReportBlock.NOT_READY).exists()
+        return not obj.blocks.filter(readiness=ReportBlock.NOT_READY).exists()
 
 
 class ReportSerializer(ReportLightSerializer):

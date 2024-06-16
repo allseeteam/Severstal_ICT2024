@@ -257,13 +257,14 @@ def get_one_figure_by_entity(entity, return_plotly_format=False):
     line_charts = [get_plot_fig(entity, is_plotly_obj=return_plotly_format, **settings)
                    for settings in line_chart_settings]
     # print('line charts', len(line_charts))
-    if line_charts:
-        return line_charts[0]
+    
     pie_chart_settings = get_pie_chart_settings(entity)
     pie_charts = [get_pie_chart(entity, is_plotly_obj=return_plotly_format, **settings)
                   for settings in pie_chart_settings]
     # print('pie charts', len(pie_charts))
     if pie_charts:
         return pie_charts[0]
+    if line_charts:
+        return line_charts[0]
     return None
     # return get_table_fig(entity)

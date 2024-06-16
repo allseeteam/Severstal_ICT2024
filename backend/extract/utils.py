@@ -134,7 +134,7 @@ def is_float(x):
 
 
 def is_na(x):
-    return x is None or x == ''
+    return x is None or x == '' or x == float('nan') or pd.isna(x)
 
 
 units = ['₽', 'р.', '$']
@@ -195,7 +195,7 @@ def dictify_df(df):
 
 
 def read_html(html_content):
-    return pd.read_html(html_content, index_col=0)[0]
+    return pd.read_html(StringIO(html_content), index_col=0)[0]
 
 
 def read_json(content):

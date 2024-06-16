@@ -2,6 +2,7 @@ import pickle
 from django.db import models
 from django.db.transaction import atomic
 from django.forms import model_to_dict
+from extract.process_df import preprocess_entity
 from search import ya_search, find_youtube_video
 from analyst.settings import BASE_DIR, YANDEX_SEARCH_API_TOKEN
 from rest_framework import serializers
@@ -116,8 +117,8 @@ class CreateReportSerializer(serializers.ModelSerializer):
             )
             index_ids = list(map(lambda x: x[0], result))
             data = Data.objects.filter(
-                index_id__in=index_ids
-            )
+                id__in=index_ids
+            ).all()
             if data.count() > 0:
                 data = data[0]
             else:
@@ -131,11 +132,12 @@ class CreateReportSerializer(serializers.ModelSerializer):
             entity = model_to_dict(data_obj)
             entity['frame'] = entity['data']
             entity['meta'] = entity['meta_data'].get('title', '')
+            entity = preprocess_entity(entity)
             representation = get_one_figure_by_entity(
                 entity=entity,
                 return_plotly_format=True if block_type == MetaBlock.PLOTLY else False
             )
-            return representation
+            return representation.to_dict()
         return {}
 
     def create(self, validated_data):
@@ -156,9 +158,6 @@ class CreateReportSerializer(serializers.ModelSerializer):
         )
 
         for meta_block in template.meta_blocks.all():
-            # TODO: кажется, если пользователь изначально указал текст, то мы тут все равно можем показать график
-            # хорошо бы поменять. нужно ориентироваться на meta_block.type
-            # block_type = meta_block.type
             urls_to_parse: list[str] = []
             video_to_summarize: str = []
 

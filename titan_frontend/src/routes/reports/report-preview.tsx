@@ -173,7 +173,7 @@ const ReportPreviewPage = () => {
                           )}
                           <div className="flex flex-col space-y-2 items-end">
                             {block.source ? (
-                              <div>
+                              <div className="overflow-hidden text-ellipsis max-w-full">
                                 <a
                                   href={block.source}
                                   target="_blank"

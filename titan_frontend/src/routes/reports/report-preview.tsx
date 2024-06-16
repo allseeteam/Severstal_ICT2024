@@ -15,6 +15,13 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { IconFidgetSpinner } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { LucideFile, LucideMoveUp } from 'lucide-react';
@@ -24,7 +31,6 @@ import { useParams } from 'react-router-dom';
 
 const ReportPreviewPage = () => {
   const params = useParams();
-  console.log(params.reportId);
 
   const {
     data: reportData,
@@ -41,11 +47,13 @@ const ReportPreviewPage = () => {
 
   const [summaryByBlockLoading, setSummaryByBlockLoading] = useState<any>({});
 
+  const [aiTypeByBlock, setAiTypeByBlock] = useState<any>({});
   const generateAiReport = async (blockId: number) => {
     setSummaryByBlockLoading({ ...summaryByBlockLoading, [blockId]: true });
     await generateSummaryByReportBlockApi({
       id: blockId,
-      type: 'yandexgpt',
+      // 'yandexgpt-lite'
+      type: aiTypeByBlock[blockId] ?? 'yandexgpt',
     });
     setSummaryByBlockLoading({ ...summaryByBlockLoading, [blockId]: false });
     refetch();
@@ -176,22 +184,45 @@ const ReportPreviewPage = () => {
                               </div>
                             ) : null}
                             {!block.summary ? (
-                              <Button
-                                onClick={() => generateAiReport(block.id)}
-                                className="w-fit"
-                                disabled={summaryByBlockLoading[block.id]}
-                              >
-                                {summaryByBlockLoading[block.id] ? (
-                                  <div className="flex items-center justify-center">
-                                    <IconFidgetSpinner
-                                      className=" animate-spin"
-                                      size={16}
-                                    />
-                                  </div>
-                                ) : (
-                                  'Вывод от нейросети'
-                                )}
-                              </Button>
+                              <div className="flex items-center space-x-2">
+                                <Select
+                                  value={aiTypeByBlock[block.id]}
+                                  onValueChange={(d) =>
+                                    setAiTypeByBlock({
+                                      ...aiTypeByBlock,
+                                      [block.id]: d,
+                                    })
+                                  }
+                                >
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Yandex GPT" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="yandexgpt">
+                                      Yandex GPT
+                                    </SelectItem>
+                                    <SelectItem value="yandexgpt-lite">
+                                      Yandex GPT-Lite
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <Button
+                                  onClick={() => generateAiReport(block.id)}
+                                  className="w-fit"
+                                  disabled={summaryByBlockLoading[block.id]}
+                                >
+                                  {summaryByBlockLoading[block.id] ? (
+                                    <div className="flex items-center justify-center">
+                                      <IconFidgetSpinner
+                                        className=" animate-spin"
+                                        size={16}
+                                      />
+                                    </div>
+                                  ) : (
+                                    'Вывод от нейросети'
+                                  )}
+                                </Button>
+                              </div>
                             ) : null}
                             {!block.comment ? (
                               <Dialog open={open} onOpenChange={setOpen}>

@@ -3,7 +3,7 @@ from django.db import models
 from django.db.transaction import atomic
 from django.forms import model_to_dict
 from search import ya_search, find_youtube_video
-from analyst.settings import YANDEX_SEARCH_API_TOKEN
+from analyst.settings import BASE_DIR, YANDEX_SEARCH_API_TOKEN
 from rest_framework import serializers
 
 from accounts.models import (
@@ -16,7 +16,7 @@ from extract.reports import get_one_figure_by_entity
 
 search_engine = None
 try:
-    search_engine = pickle.load(open('search.pkl', 'rb'))
+    search_engine = pickle.load(open(f'{BASE_DIR}/search.pkl', 'rb'))
 except FileNotFoundError:
     print('No search.pkl file found')
 

@@ -4,28 +4,40 @@
    - Python/Django
    - PostgreSQL
    - Celery/RabbitMQ
-3. Обработка данных:
-   -
-4. Frontend:
-   -
+   - Docker, docker-compose
+2. Поиск и обработка данных:
+   - Python/Pandas
+   - BeautifulSoup
+   - LangChain
+   - Pdfplumber - парсинг PDF
+   - Yandex Search API
+   - Yandex GPT API
+   - Youtube API - поиск и получение субтитров
+   - RuWordNet, PyMorphy3 - свой поиск
+
+3. Frontend
+   - Typescript, React
+   - Plotly
 
 # Запуск на сервере
 
 1. Скачать репозитарий
+
    ```
    git@github.com:allseeteam/Severstal_ICT2024.git
    ```
+
 2. Установка переменных окружения:
+
 - Переименовать файл .env.example в .env
 - При необходимости внести изменения
 
 3. Отредактировать файл init-letsencrypt.sh
+
 - Вставить название домена, для которого создается ssl сертификат
 - Вставить валидный email администратора
 
 4. Запустить файл init-letsencrypt.sh
-
-
 
 # Запуск бекенда в режиме разработки локально
 
@@ -109,25 +121,21 @@ python manage.py model2csv accounts.WebPage > pages.csv
 
 ## Как завести в продакшн
 
-0. Скачиваем RuWordNet для синонимов
+1. Скачиваем RuWordNet для синонимов
 
 ```
 ruwordnet download
 ```
 
-1. Подгружаем csv-файлик с индексом на продовую тачку
-2. Запускаем индексацию из файла
+2. Подгружаем csv-файлик с индексом на продовую тачку
+3. Запускаем индексацию из файла
 
 ```
 python manage.py index_csv_file file.csv
 ```
 
-3. Генерируем ресурс поискового движка
+4. Генерируем ресурс поискового движка
 
 ```
 python manage.py generate_search.py search.pkl
 ```
-
-TODO: перенести название файлика в конфиг
-
-4. Можно запускать, все заработает по эндпоинту `/api/v1/search/?q=банк`

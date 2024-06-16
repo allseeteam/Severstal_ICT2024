@@ -36,7 +36,9 @@ def get_table_fig(ent, first_n=20, width=600, height=800, **kwargs):
 
 def get_plot_fig(ent, x_col, y_cols, sort_by_x=True, first_n=20, width=600, height=800, is_plotly_obj=True, **kwargs):
     df = ent['frame']
-    title = ent['meta']['title']
+    title = ent['meta']
+    if isinstance(title, dict):
+        title = title.get('title', '')
     if isinstance(df.columns[0], tuple):
         col_index_size = len(df.columns[0])
     else:

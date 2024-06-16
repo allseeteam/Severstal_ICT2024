@@ -87,8 +87,11 @@ class SearchEngine:
         return ranked_candidates
 
     def search(self, query: str, page=1, page_size=10) -> dict[str, float]:
-        keywords = enrich_query(query)
-        # keywords = normalize_string(query).split()
+        try:
+            keywords = enrich_query(query)
+        except Exception as e:
+            keywords = normalize_string(query).split()
+            print(e)
         url_scores: dict[str, float] = {}
         for kw in keywords:
             kw_urls_score = self.bm25(kw)

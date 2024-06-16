@@ -97,6 +97,9 @@ const ReportPreviewPage = () => {
     refetch();
   };
 
+  reportData?.blocks &&
+    reportData.blocks.sort((a, b) => a.position - b.position);
+
   return (
     <div>
       <div className="max-w-lg">
@@ -124,104 +127,135 @@ const ReportPreviewPage = () => {
             <div className="max-w-xl">
               <p className="font-bold">Отчет</p>
               <div className="space-y-2">
-                {reportData.blocks.map((block) => (
-                  <div key={block.id}>
-                    {block.type === 'text' ? (
-                      <div>{block.representation.text}</div>
-                    ) : (
-                      <Plot
-                        data={block.representation.data}
-                        layout={block.representation.layout}
-                      />
-                    )}
-                    <div className="flex flex-col space-y-2 items-end">
-                      <div>
-                        <a
-                          href={block.source}
-                          target="_blank"
-                          className="hover:underline"
-                        >
-                          Источник: {block.source}
-                        </a>
-                      </div>
-                      {!block.summary ? (
-                        <Button
-                          onClick={() => generateAiReport(block.id)}
-                          className="w-fit"
-                          disabled={summaryByBlockLoading[block.id]}
-                        >
-                          {summaryByBlockLoading[block.id] ? (
-                            <div className="flex items-center justify-center mt-4">
-                              <IconFidgetSpinner
-                                className=" animate-spin"
-                                size={16}
-                              />
-                            </div>
+                {reportData?.blocks &&
+                  reportData.blocks.map((block) => (
+                    <div key={block.id}>
+                      {block.readiness === 'not_ready' ? (
+                        <div className="my-4 flex items-center space-x-2">
+                          <p>
+                            Блок #{block.position + 1} еще не готов, в процессе
+                          </p>
+                          <span className="">
+                            <IconFidgetSpinner className="animate-spin" />
+                          </span>
+                        </div>
+                      ) : block.readiness === 'error' ? (
+                        <div className="my-4">
+                          Ошибка в генерации блока #{block.position + 1}
+                        </div>
+                      ) : (
+                        <div>
+                          {block.type === 'text' ? (
+                            <div>{block.representation.text}</div>
                           ) : (
-                            'Вывод от нейросети'
+                            <Plot
+                              data={block.representation.data}
+                              layout={block.representation.layout}
+                            />
                           )}
-                        </Button>
-                      ) : null}
-                      {!block.comment ? (
-                        <Dialog open={open} onOpenChange={setOpen}>
-                          <DialogTrigger asChild>
-                            <Button onClick={() => {}} className="w-fit">
-                              Добавить комментарий
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="sm:max-w-[425px]">
-                            <DialogHeader>
-                              <DialogTitle>Комментарий к блоку</DialogTitle>
-                            </DialogHeader>
-                            <div>
-                              <div className="grid grid-cols-2 items-start gap-2 p-4 border rounded-lg">
-                                <Label htmlFor="name" className="text-left">
-                                  Комментарий
-                                </Label>
-                                <Input
-                                  id="name"
-                                  defaultValue=""
-                                  className="col-span-3"
-                                  value={comment}
-                                  onChange={(e) => setComment(e.target.value)}
-                                />
-                              </div>
-                              <div className="flex justify-end">
-                                <Button
-                                  onClick={() => addComment(block.id)}
-                                  className="mt-4 "
+                          <div className="flex flex-col space-y-2 items-end">
+                            {block.source ? (
+                              <div>
+                                <a
+                                  href={block.source}
+                                  target="_blank"
+                                  className="hover:underline"
                                 >
-                                  Добавить комментарий
-                                </Button>
+                                  Источник: {block.source}
+                                </a>
+                              </div>
+                            ) : null}
+                            {!block.summary ? (
+                              <Button
+                                onClick={() => generateAiReport(block.id)}
+                                className="w-fit"
+                                disabled={summaryByBlockLoading[block.id]}
+                              >
+                                {summaryByBlockLoading[block.id] ? (
+                                  <div className="flex items-center justify-center">
+                                    <IconFidgetSpinner
+                                      className=" animate-spin"
+                                      size={16}
+                                    />
+                                  </div>
+                                ) : (
+                                  'Вывод от нейросети'
+                                )}
+                              </Button>
+                            ) : null}
+                            {!block.comment ? (
+                              <Dialog open={open} onOpenChange={setOpen}>
+                                <DialogTrigger asChild>
+                                  <Button onClick={() => {}} className="w-fit">
+                                    Добавить комментарий
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-[425px]">
+                                  <DialogHeader>
+                                    <DialogTitle>
+                                      Комментарий к блоку
+                                    </DialogTitle>
+                                  </DialogHeader>
+                                  <div>
+                                    <div className="grid grid-cols-2 items-start gap-2 p-4 border rounded-lg">
+                                      <Label
+                                        htmlFor="name"
+                                        className="text-left"
+                                      >
+                                        Комментарий
+                                      </Label>
+                                      <Input
+                                        id="name"
+                                        defaultValue=""
+                                        className="col-span-3"
+                                        value={comment}
+                                        onChange={(e) =>
+                                          setComment(e.target.value)
+                                        }
+                                      />
+                                    </div>
+                                    <div className="flex justify-end">
+                                      <Button
+                                        onClick={() => addComment(block.id)}
+                                        className="mt-4 "
+                                      >
+                                        Добавить комментарий
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            ) : null}
+                          </div>
+                          {block.comment ? (
+                            <div className="my-4 border rounded-md p-4">
+                              <p className="font-bold">
+                                Комментарий к блоку{' '}
+                                <LucideMoveUp className="inline" size={16} />
+                              </p>
+                              <div className="my-2 text-xs">
+                                {block.comment}
                               </div>
                             </div>
-                          </DialogContent>
-                        </Dialog>
-                      ) : null}
+                          ) : null}
+                          {block.summary ? (
+                            <div className="my-4 border rounded-md p-4">
+                              <p className="font-bold">
+                                Суммаризация блока от ИИ{' '}
+                                <LucideMoveUp className="inline" size={16} />
+                              </p>
+                              <div
+                                dangerouslySetInnerHTML={{
+                                  __html: block.summary,
+                                }}
+                                className="my-2 text-xs"
+                              ></div>
+                            </div>
+                          ) : null}
+                        </div>
+                      )}
                     </div>
-                    {block.comment ? (
-                      <div className="my-4 border rounded-md p-4">
-                        <p className="font-bold">
-                          Комментарий к блоку{' '}
-                          <LucideMoveUp className="inline" size={16} />
-                        </p>
-                        <div className="my-2 text-xs">{block.comment}</div>
-                      </div>
-                    ) : null}
-                    {block.summary ? (
-                      <div className="my-4 border rounded-md p-4">
-                        <p className="font-bold">
-                          Суммаризация блока от ИИ{' '}
-                          <LucideMoveUp className="inline" size={16} />
-                        </p>
-                        <div
-                          dangerouslySetInnerHTML={{ __html: block.summary }}
-                          className="my-2 text-xs"
-                        ></div>
-                      </div>
-                    ) : null}
-                  </div>
-                ))}
+                  ))}
               </div>
             </div>
             <div>

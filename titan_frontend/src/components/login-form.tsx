@@ -6,9 +6,9 @@ import { cn } from '@/utils';
 import { useAuth } from './auth-provider';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { sleep } from '../utils';
 import { IconFidgetSpinner } from '@tabler/icons-react';
 import { Button } from './ui/button';
+import Balancer from 'react-wrap-balancer';
 
 type Inputs = {
   login: string;
@@ -38,7 +38,10 @@ export function SignupFormDemo() {
     <div className="max-w-md w-full mx-auto rounded-none md:rounded-2xl p-4 md:p-8 shadow-input bg-blue-d1 border">
       <h2 className="font-bold text-xl text-black-d1">Добро пожаловать</h2>
       <p className="text-black-d2 text-sm max-w-sm mt-2">
-        Для тестовых пользователей доступ через логин/пароль, который вам выдали
+        <Balancer>
+          Доступ через логин/пароль, который вам выдали (для тестирования: логин
+          - test, пароль - test)
+        </Balancer>
       </p>
 
       <form className="mt-4 mb-2" onSubmit={handleSubmit(onSubmit)}>

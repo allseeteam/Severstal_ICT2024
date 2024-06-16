@@ -70,6 +70,8 @@ services:
       - ./data/certbot/www:/var/www/certbot
       - media_value:/var/html/media/
       - static_value:/var/html/static/
+      - ./titan_frontend/front_dist:/usr/share/nginx/html/
+
     depends_on:
       - certbot
       - backend

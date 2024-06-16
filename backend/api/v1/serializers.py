@@ -281,22 +281,26 @@ class ReportBlockSummaryModelSerializer(serializers.ModelSerializer):
         fields = ('type',)
 
 
-
 class ReportLightSerializer(serializers.ModelSerializer):
     search_query = serializers.StringRelatedField()
     theme = serializers.SerializerMethodField()
     template = serializers.StringRelatedField()
+    readiness = serializers.SerializerMethodField()
 
     class Meta:
         model = Report
         fields = (
             'id', 'theme', 'template',
             'search_query',
-            'date'
+            'date', 'readiness'
         )
 
     def get_theme(self, obj):
-        return obj.theme
+        return str(obj.theme)
+    
+    def get_readiness(self, obj):
+        # В проде надо такое оптимизировать
+        return not ReportBlock.objects.filter(readiness=ReportBlock.NOT_READY).exists()
 
 
 class ReportSerializer(ReportLightSerializer):
@@ -307,7 +311,8 @@ class ReportSerializer(ReportLightSerializer):
         fields = (
             'id', 'theme', 'template',
             'search_query',
-            'blocks', 'date'
+            'blocks', 'date',
+            'readiness'
         )
 
     def get_blocks(self, obj):

@@ -42,6 +42,8 @@ const ReportPreviewPage = () => {
     queryFn: async () => {
       return getReportApi({ id: params.reportId as string });
     },
+    refetchInterval: 3000,
+    refetchIntervalInBackground: true,
   });
   console.log({ reportData });
 
@@ -111,37 +113,55 @@ const ReportPreviewPage = () => {
   return (
     <div>
       <div className="max-w-lg">
-        <h3 className="text-gray-800 text-xl font-bold sm:text-2xl">
+        <h3 className="text-gray-800 text-3xl font-bold">
           Отчет #{params.reportId}
         </h3>
       </div>
-      <div className="my-8">
+      <div className="my-6">
         {reportDataLoading ? (
           <div>
             <IconFidgetSpinner className=" animate-spin" />
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2 max-w-2xl">
             <div>
-              <p className="font-bold">Тематика</p>
-              <p>{reportData.theme}</p>
-            </div>
-            <div>
-              <p className="font-bold">Шаблон</p>
-              <p>{reportData.template}</p>
-            </div>
-            <div>
-              <p className="font-bold">Запрос</p>
-              <p>{reportData.search_query}</p>
-            </div>
-            <div>
-              <p className="font-bold">Дата</p>
-              <p>
-                {Intl.DateTimeFormat('ru-RU').format(new Date(reportData.date))}
+              <p className="text-gray-800 text-2xl font-bold">
+                Параметры генерации
               </p>
             </div>
-            <div className="max-w-xl">
-              <p className="font-bold">Отчет</p>
+            <div className="grid grid-cols-2 gap-2 mt-4">
+              <div>
+                <p className="font-bold">Тематика</p>
+                <p>{reportData.theme}</p>
+              </div>
+              <div>
+                <p className="font-bold">Шаблон</p>
+                <p>{reportData.template}</p>
+              </div>
+              <div>
+                <p className="font-bold">Запрос</p>
+                <p>{reportData.search_query}</p>
+              </div>
+              {reportData.search_start ? (
+                <div>
+                  <p className="font-bold">Временные рамки данных</p>
+                  <p>
+                    {reportData.search_start} - {reportData.search_end}
+                  </p>
+                </div>
+              ) : null}
+              <div>
+                <p className="font-bold">Дата генерации</p>
+                <p>
+                  {Intl.DateTimeFormat('ru-RU').format(
+                    new Date(reportData.date)
+                  )}
+                </p>
+              </div>
+            </div>
+
+            <div className="max-w-2xl">
+              <p className="font-bold text-2xl mb-2 mt-4">Отчет</p>
               <div className="space-y-2">
                 {reportData?.blocks &&
                   reportData.blocks.map((block) => (
@@ -300,8 +320,8 @@ const ReportPreviewPage = () => {
               </div>
             </div>
             <div>
-              <p className="font-bold">Скачать отчет</p>
-              <div className="space-y-2">
+              <p className="font-bold text-3xl">Скачать отчет</p>
+              <div className="space-y-2 mt-4">
                 <a
                   onClick={() => downloadReport('pdf')}
                   href="javascript:void(0);"

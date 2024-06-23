@@ -18,6 +18,8 @@ import { PostTemplateParams, postTemplateApi } from '@/api/template';
 import { postReportApi } from '@/api/report';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
+import { DatePickerWithRange } from '@/components/date-picker-with-range';
+import { DateRange } from 'react-day-picker';
 
 const ReportsCreatePage = () => {
   const {
@@ -68,16 +70,40 @@ const ReportsCreatePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [reportsLoading, setReportsLoading] = useState(false);
 
+  const [date, setDate] = React.useState<DateRange | undefined>({
+    from: new Date(2019, 0, 20),
+    to: new Date(),
+  });
+
   const generateReport = async () => {
     if (!selectedTemplate) {
       console.error('no template chosen');
       return;
     }
     setReportsLoading(true);
+    console.log({ date });
 
+    let search_start = null;
+    let search_end = null;
+
+    if (date?.from && date?.to) {
+      search_start = new Intl.DateTimeFormat('fr-CA', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(date.from);
+      search_end = new Intl.DateTimeFormat('fr-CA', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(date.to);
+    }
+    setReportsLoading(false);
     const report = await postReportApi({
       template: selectedTemplate,
       search_query: searchQuery,
+      search_start,
+      search_end,
     });
     console.log({ report });
     setReportsLoading(false);
@@ -144,7 +170,15 @@ const ReportsCreatePage = () => {
           </div>
           <div className="mt-4">
             <p className="text-sm font-bold">
-              3. Выберите шаблон или создайте новый
+              3. Уточните временные рамки данных (не обязательно)
+            </p>
+            <div className="my-4 w-full">
+              <DatePickerWithRange date={date} setDate={setDate} />
+            </div>
+          </div>
+          <div className="mt-4">
+            <p className="text-sm font-bold">
+              4. Выберите шаблон или создайте новый
             </p>
             <div className="my-4 w-full">
               <div className="grid grid-cols-2 xl:grid-cols-3 gap-2">

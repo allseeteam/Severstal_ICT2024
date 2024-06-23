@@ -45,6 +45,8 @@ export const getReportApi = async ({ id }: { id: string }) => {
 interface PostTemplateParams {
   template: number;
   search_query: string;
+  search_start: string | null;
+  search_end: string | null;
 }
 
 export const postReportApi = async (params: PostTemplateParams) => {

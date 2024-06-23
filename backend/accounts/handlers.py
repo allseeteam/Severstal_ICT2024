@@ -132,38 +132,38 @@ class DataParser:
 
     @classmethod
     def page_content_to_data(cls, page: models.WebPage, save: bool = True) -> List[models.Data]:
+        # try:
+        entities = prepare_entities(page.content, page.url)
+        objs = []
         try:
-            entities = prepare_entities(page.content, page.url)
-            objs = []
-            try:
-                entities = prepare_entities(
-                    page.content, page.url, return_dicts=False)
-                entities = preprocess_entities(entities)
-                print(f'len of entities before filter {len(entities)}')
-                entities = list(
-                    filter(lambda entity: is_valid_entity(entity), entities))
-                print(f'len of entities after filter {len(entities)}')
-            except TypeError:
-                return []
-            for entity in entities:
-                objs.append(
-                    models.Data(
-                        index_id=get_entity_id(entity),
-                        type=models.Data.WEB_PAGE,
-                        data_type=models.Data.DATA_TYPES,
-                        page=page,
-                        data=htmlify_df(entity['frame']),
-                        meta_data=entity['meta'],
-                        date=datetime.today(),
-                        version=0,
-                    )
-                )
-
-            if save:
-                return models.Data.objects.bulk_create(objs=objs, ignore_conflicts=True)
-            return objs
-        except:
+            entities = prepare_entities(
+                page.content, page.url, return_dicts=False)
+            entities = preprocess_entities(entities)
+            print(f'len of entities before filter {len(entities)}')
+            entities = list(
+                filter(lambda entity: is_valid_entity(entity), entities))
+            print(f'len of entities after filter {len(entities)}')
+        except TypeError:
             return []
+        for entity in entities:
+            objs.append(
+                models.Data(
+                    index_id=get_entity_id(entity),
+                    type=models.Data.WEB_PAGE,
+                    data_type=models.Data.PLOTLY,
+                    page=page,
+                    data=htmlify_df(entity['frame']),
+                    meta_data=entity['meta'],
+                    date=datetime.today(),
+                    version=0,
+                )
+            )
+
+        if save:
+            return models.Data.objects.bulk_create(objs=objs, ignore_conflicts=True)
+        return objs
+        # except:
+        #     return []
 
     @classmethod
     def bulk_page_content_to_data(cls, pages: list[models.WebPage]) -> list[models.Data]:
@@ -191,7 +191,7 @@ class DataParser:
                 models.Data(
                     index_id=get_entity_id(entity),
                     type=models.Data.FILE,
-                    data_type=models.Data.DATA_TYPES,
+                    data_type=models.Data.PLOTLY,
                     file=file,
                     data=htmlify_df(entity['frame']),
                     meta_data=entity['meta'],
@@ -264,12 +264,14 @@ class SiteParser:
                     with open(f'{BASE_DIR.parent}/data/{filename}', 'wb') as f:
                         f.write(requests.get(url).content)
                     print(f'Скачан файл{filename}')
+                    page = models.WebPage(
+                        url=url,
+                        # content=content.page_content,
+                        update_date=now
+                    )
+                    page.save()
                     web_pages.append(
-                        models.WebPage(
-                            url=url,
-                            # content=content.page_content,
-                            update_date=now
-                        )
+                        page
                     )
                 except Exception as e:
                     print(f'Ошибка при сохранении {e}')

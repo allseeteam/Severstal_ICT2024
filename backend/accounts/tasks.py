@@ -39,6 +39,8 @@ def add_search_data_to_report_block(report_block_id: int, urls_to_parse: str, mo
 
     parser = SiteParser()
     data = parser.parse_pages(urls=urls_to_parse)
+    print(f'data after parser: {data}')
+    # print(f'page from data: {data[0].page}')
     if not data:
         data = DataParser.summarize_urls_from_search(urls_to_parse, model_id)
         if data is None:
@@ -49,11 +51,14 @@ def add_search_data_to_report_block(report_block_id: int, urls_to_parse: str, mo
     for data_obj in data:
         try:
             entity = model_to_dict(data_obj)
+            print(entity)
             if entity['data_type'] == 'text':
                 report_block.data = data_obj
                 report_block.representation = {'text': data_obj.data}
                 report_block.readiness = models.ReportBlock.READY
                 report_block.type = 'text'
+                report_block.save()
+                print('saved')
                 break
             entity['frame'] = entity['data']
             entity['meta'] = entity['meta_data'].get('title', '')
@@ -63,13 +68,15 @@ def add_search_data_to_report_block(report_block_id: int, urls_to_parse: str, mo
             representation = representation.to_dict()
 
             report_block.data = data_obj
+            report_block.data.save()
             report_block.representation = representation
             report_block.type = models.ReportBlock.PLOTLY
             report_block.readiness = models.ReportBlock.READY
+            # data_obj.save()
+            report_block.save()
             break
         except Exception as e:
             print(e)
-    report_block.save()
 
 
 def process_block(report_block_id: int, meta_block_id: int, model_id='yandexgpt'):

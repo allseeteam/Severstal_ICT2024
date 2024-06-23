@@ -150,6 +150,8 @@ def preproc_float(x):
 
 
 def convert_to_float(x, ignore_error=False):
+    if x is None:
+        return None
     x = preproc_float(x)
 
     if x.startswith('0'):

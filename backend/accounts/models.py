@@ -161,6 +161,7 @@ class Report(models.Model):
     class Meta:
         verbose_name = 'Аналитический отчет'
         verbose_name_plural = 'Аналитические отчеты'
+        ordering = ('pk',)
 
     def get_pdf(self):
         blocks = self.blocks.filter(readiness=ReportBlock.READY)

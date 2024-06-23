@@ -22,9 +22,11 @@ class Command(BaseCommand):
         2) Кладем в инвертированный индекс в структуре SearchEngine
         3) Пиклим в output
         """
+        se = SearchEngine()
         entities = models.Data.objects.all()
         print(f'Read {len(entities)} entities')
         entities = [model_to_dict(r) for r in entities]
+        # entities = entities[:10]
         for entity in tqdm(entities):
             entity['data_id'] = entity['id']
             if entity['data_type'] == models.Data.TEXT:
@@ -35,9 +37,10 @@ class Command(BaseCommand):
                 entity['meta'] = entity['meta_data']['title']
                 entity = preprocess_entity(entity)
             # break
-        # entities = preprocess_entities(entities)
-            se = SearchEngine()
+            # entities = preprocess_entities(entities)
+            # print(entity['data_id'])
             se.index_entity(entity)
             # se.bulk_index_entities(entities)
         print(f'Saving search engine to {output}')
+        print(se._documents.keys())
         pickle.dump(se, open(output, 'wb'))

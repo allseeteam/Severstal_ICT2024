@@ -1,3 +1,4 @@
+from datetime import date
 import pickle
 from django.db import models
 from django.db.transaction import atomic
@@ -108,7 +109,9 @@ class CreateReportSerializer(serializers.ModelSerializer):
         model = Report
         fields = (
             'template',
-            'search_query'
+            'search_query',
+            'search_start',
+            'search_end'
         )
 
     def get_data_from_search_engine(self, search_query_text):
@@ -146,6 +149,8 @@ class CreateReportSerializer(serializers.ModelSerializer):
         user = request.user
         template = Template.objects.get(id=validated_data.get('template'))
         raw_search_query: str = validated_data.get('search_query')
+        search_start: date = validated_data.get('search_start')
+        search_end: date = validated_data.get('search_end')
 
         search_query, _ = SearchQuery.objects.get_or_create(
             user=user,
@@ -321,7 +326,8 @@ class ReportSerializer(ReportLightSerializer):
             'id', 'theme', 'template',
             'search_query',
             'blocks', 'date',
-            'readiness'
+            'readiness', 'search_start',
+            'search_end'
         )
 
     def get_blocks(self, obj):

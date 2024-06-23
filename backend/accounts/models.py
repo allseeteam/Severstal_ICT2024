@@ -151,6 +151,12 @@ class Report(models.Model):
         verbose_name='Данные',
         related_name='reports'
     )
+    search_start = models.DateField(
+        null=True
+    )
+    search_end = models.DateField(
+        null=True
+    )
 
     class Meta:
         verbose_name = 'Аналитический отчет'

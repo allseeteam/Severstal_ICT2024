@@ -38,7 +38,11 @@ def get_tables_from_raw_html(content: str, only_df=True) -> list[dict]:
 def html2list(table):
     """Функция со stackoverflow для парсинга таблиц из html"""
     if isinstance(table, str):
-        table = et.fromstring(table)
+        try:
+            table = et.fromstring(table)
+        except Exception as e:
+            print(f"Problem with table: {table}, exception: {e}")
+            return '', []
 
     # parse caption
     caption = table.find("caption")

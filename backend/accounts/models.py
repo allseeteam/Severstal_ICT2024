@@ -260,13 +260,15 @@ class Data(models.Model):
         (FILE, 'Пользовательский файл'),
     )
 
-    SERIES = 'series'
-    REFERENCE = 'reference'
+    # SERIES = 'series'
+    # REFERENCE = 'reference'
     TEXT = 'text'
+    PLOTLY = 'plotly'
 
     DATA_TYPES = (
-        (SERIES, 'Временной ряд'),
-        (REFERENCE, 'Справочник'),
+        (PLOTLY, 'plotly'),
+        # (SERIES, 'Временной ряд'),
+        # (REFERENCE, 'Справочник'),
         (TEXT, 'Текст')
     )
 

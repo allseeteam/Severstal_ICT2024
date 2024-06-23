@@ -246,12 +246,10 @@ class CreateReportSerializer(serializers.ModelSerializer):
         else:
             return [url], None
 
-    def represent_meta_block(self, search_query, meta_block, materialized_blocks):
+    def represent_meta_block(self, search_query_text, meta_block, materialized_blocks):
         # 1 - идем в локальный поиск с тем же типом
         # 2 - идем в большой поиск с тем же типом
         # 3 - если не находим тот же тип, то выдаем другой тип
-
-        search_query_text = f'{meta_block.query_template} {search_query}'
         # local search
         data_obj = self.local_search(
             search_query_text, meta_block.type, materialized_blocks)
@@ -275,6 +273,10 @@ class CreateReportSerializer(serializers.ModelSerializer):
         raw_search_query: str = validated_data.get('search_query')
         search_start: date = validated_data.get('search_start')
         search_end: date = validated_data.get('search_end')
+        if search_start is not None:
+            search_start = search_start.strftime('%Y%m%d')
+        if search_end is not None:
+            search_end = search_end.strftime('%Y%m%d')
 
         search_query, _ = SearchQuery.objects.get_or_create(
             user=user,
@@ -288,9 +290,19 @@ class CreateReportSerializer(serializers.ModelSerializer):
         )
 
         materialized_blocks = []
+
+        search_by_date = ''
+        if search_start is not None and search_end is None:
+            search_by_date = f'date:>{search_start}'
+        if search_start is None and search_end is not None:
+            search_by_date = f'date:<{search_end}'
+        if search_start is not None and search_end is not None:
+            search_by_date = f'date:{search_start}..{search_end}'
+
         for meta_block in template.meta_blocks.all():
+            search_query_text = f'{meta_block.query_template} {search_query} {search_by_date}'
             repr = self.represent_meta_block(
-                raw_search_query, meta_block, materialized_blocks)
+                search_query_text, meta_block, materialized_blocks)
             data_obj = repr['data_obj']
             representation = repr['representation']
             to_index_ya_ru = repr['to_index_ya_ru']

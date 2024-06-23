@@ -51,7 +51,8 @@ def get_plot_fig(ent, x_col, y_cols, sort_by_x=True, first_n=20, width=600, heig
         df = df.iloc[col_index_size:first_n]
 
     x = df[x_col].values.tolist()
-    y = [[y_val if y_val != float('nan') else None for y_val in df[y_col].values.tolist()] for y_col in y_cols]
+    import math
+    y = [[None if math.isnan(y_val) else y_val for y_val in df[y_col].values.tolist()] for y_col in y_cols]
     fig = go.Figure(
         data=[
             go.Scatter(
@@ -66,9 +67,9 @@ def get_plot_fig(ent, x_col, y_cols, sort_by_x=True, first_n=20, width=600, heig
         return {'x': x, 'y': y, 'title': title, 'type': 'line'}
 
     fig.update_layout(
-        title=title,
+        title=str(title),
         # width=width, height=height,
-        xaxis_title=x_col,
+        xaxis_title=str(x_col),
         # yaxis_title=,
         showlegend=True,
         # legend_xanchor='right',
